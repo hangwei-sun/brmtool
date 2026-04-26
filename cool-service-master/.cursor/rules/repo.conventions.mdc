@@ -1,0 +1,38 @@
+---
+description: 仓库通用约定（结构/协作/生成位置）
+globs: "**/*"
+---
+
+## 仓库结构约定
+
+- 本仓库包含两个主要工程：
+  - `api/`：后端（Node.js + TypeScript）
+  - `vue/`：前端（Vite + Vue3 + TypeScript）
+- 当任务仅涉及某一侧时，优先在该目录内完成闭环（不要跨目录“顺手改”）。
+- 新增业务功能尽量以“模块”方式落地：
+  - 后端模块：`api/src/modules/<module>/...`
+  - 前端模块：`vue/src/modules/<module>/...`
+
+## 代码变更范围
+
+- 修改后端：遵守 `api/.cursor/rules/` 中关于 module/controller/service/db/tenant/authority 等规则。
+- 修改前端：遵守 `vue/.cursor/rules/` 中关于 module/crud/table/form/upsert/search 等规则。
+- 仅当确实需要联动（接口 + 页面）时才同时改 `api/` 与 `vue/`。
+
+## 文档与设计文件
+
+- 需求/设计类文档统一放 `doc/`（例如：`doc/requirements.md`、`doc/*-design.md`）。
+- 如果新增文档，请补齐：
+  - 背景与目标
+  - 范围（包含/不包含）
+  - 数据结构 / 接口（如适用）
+  - 关键流程与边界条件
+  - 兼容性与迁移说明（如适用）
+
+## 生成文件与依赖
+
+- 不要把生成产物（构建输出、临时文件）当成源码提交，除非项目约定必须提交。
+- 若需要新增依赖：
+  - `api/` 使用其自身的包管理与锁文件
+  - `vue/` 使用其自身的包管理与锁文件
+

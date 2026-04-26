@@ -1,0 +1,24 @@
+---
+alwaysApply: true
+---
+
+# 框架选型
+- 1、基础Electron：electron-vite v5.0，https://electron-vite.org
+- 2、UI框架：Naive UI v2.43.2，https://www.naiveui.com
+- 3、前端设计与交互skills：/frontend-design
+
+# 代码模块化规范
+- 1、Main 进程的每个功能必须独立成模块，代码放在 `src/main/<模块名>/` 目录下（例如 IPC 模块放在 `src/main/ipc/`）
+- 2、`src/main/index.ts` 只负责初始化和注册各模块，禁止在其中直接编写业务逻辑
+- 3、新增 Main 功能时，在 `src/main/<功能名>/index.ts` 创建模块，并在 `src/main/index.ts` 中统一注册
+
+# 文档规范
+- 1、每个 Main 功能模块都必须有对应的文档，放在 `docs/<模块名>.md` 下（例如 IPC 模块文档放在 `docs/ipc.md`）
+- 2、新增功能模块时，必须同步创建对应文档
+- 3、文档内容需包含：模块功能说明、API 接口列表（channel 名称、入参、返回值）、使用示例
+
+# 其他
+- 1、注释使用中文
+- 2、基础配置写在.env
+- 3、安装的npm依赖要确保是最新的
+- 4、用pnpm安装依赖
