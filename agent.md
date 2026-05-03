@@ -149,3 +149,198 @@ brmtool/
 - 前端CRUD使用 `@cool-vue/crud` 组件（cl-crud），遵循插件化架构
 - Electron 主进程功能按模块分目录（`src/main/<模块名>/index.ts`），每个模块配 docs 文档
 - 包管理器统一使用 pnpm
+
+## 7. Product Vision（数智工具箱目标）
+
+基于当前仓库开发一个“数智工具箱”桌面应用：桌面端面向普通用户使用，后台管理端面向管理员配置和运营工具库。
+
+### 用户角色
+- 普通用户：在 Electron 桌面端浏览、搜索、收藏、打开工具，查看最近使用和个人信息。
+- 管理员：在 CoolAdmin 后台维护工具分类、工具信息、排序、状态、推荐位、入口地址和基础统计。
+- 开发者：按模块扩展内置工具、Electron 主进程能力和后端接口，保持可测试、可维护。
+
+### 工具类型
+- `external_link`：外部链接工具，打开网页、Web 系统、在线工具。
+- `internal_web`：内置 Web 工具，在 Electron Renderer 内部路由运行，如 JSON 格式化、Base64 编解码、URL 编码、Markdown 预览等。
+- `local_plugin`：本地插件工具，第一阶段只预留结构，不开放任意命令执行。
+
+### 设计方向
+- 桌面端参考深色科技风工具箱界面：左侧导航、顶部搜索、首页 banner、收藏工具、推荐工具卡片、分类入口、通知和我的账号。
+- 后台管理端保持 CoolAdmin 现有风格，优先效率、稳定和配置能力，不做大屏化视觉。
+- 工具配置由后端统一管理，桌面端拉取并缓存，后端不可用时展示上次缓存或内置默认工具。
+
+## 8. MVP Scope（第一阶段范围）
+
+### 必须完成
+- 后端新增 `toolbox` 模块，支持工具分类、工具信息、收藏、使用记录。
+- 后台管理端新增工具分类管理、工具管理、基础使用统计页面。
+- Electron 桌面端新增工具箱首页、工具列表、工具打开、搜索、收藏和最近使用。
+- 支持 `external_link` 和 `internal_web` 两类工具的真实可用流程。
+- 支持本地缓存工具配置，离线或接口失败时可降级使用。
+- 支持基础使用统计：今日使用次数、工具打开记录、热门工具排行的数据基础。
+
+### 暂缓实现
+- 插件商店、插件市场、插件自动更新。
+- 第三方插件沙箱和任意本地命令执行。
+- 复杂多租户计费、审批流、工作流编排。
+- 移动端 `cool-uni-8.x` 的工具箱适配。
+
+## 9. Domain Model（核心数据模型）
+
+### 工具分类 `ToolboxCategoryEntity`
+- `name`：分类名称，如“全部”“导航”“工具”“智能”“学习”“签到”。
+- `code`：分类编码，如 `all`、`nav`、`tool`、`ai`、`study`。
+- `icon`：图标名称或图标 URL。
+- `sort`：排序值，数值越小越靠前。
+- `status`：状态，`1` 启用，`0` 禁用。
+- `remark`：备注。
+
+### 工具信息 `ToolboxToolEntity`
+- `categoryId`：所属分类 ID。
+- `name`：工具名称。
+- `code`：工具编码，保持唯一。
+- `description`：工具简介。
+- `icon`：图标名称或图标 URL。
+- `type`：工具类型，限定为 `external_link`、`internal_web`、`local_plugin`。
+- `entry`：工具入口，外链为 URL，内置工具为内部路由，本地插件为插件标识。
+- `openMode`：打开方式，支持 `external_browser`、`electron_window`、`embedded_webview`、`internal_route`。
+- `tags`：标签 JSON。
+- `keywords`：搜索关键词，支持拼音和首字母检索扩展。
+- `isRecommend`、`isHot`、`isNew`：推荐、热门、最新标记。
+- `sort`、`status`、`version`、`config`、`remark`：排序、状态、版本、扩展配置和备注。
+
+### 用户收藏 `ToolboxFavoriteEntity`
+- `userId`：用户 ID。
+- `toolId`：工具 ID。
+- 同一个用户对同一个工具只能收藏一次。
+
+### 使用记录 `ToolboxUsageEntity`
+- `userId`：用户 ID。
+- `toolId`：工具 ID。
+- `toolName`：工具名称快照。
+- `action`：行为类型，第一阶段使用 `open`。
+- `clientType`：客户端类型，桌面端使用 `electron`。
+- `createdAt`：记录时间。
+
+## 10. API Design（接口设计）
+
+### 管理端接口
+- 分类 CRUD：新增、删除、修改、详情、列表、分页。
+- 工具 CRUD：新增、删除、修改、详情、列表、分页。
+- 工具状态：启用、禁用、推荐、热门、最新、排序。
+- 使用统计：今日打开次数、总打开次数、热门工具排行、用户使用排行。
+
+### 桌面端接口
+- `GET /app/toolbox/home`：返回首页数据，包括分类、推荐工具、收藏工具、最近使用、统计信息。
+- `GET /app/toolbox/tools`：按分类、关键词、标签、状态查询工具列表。
+- `GET /app/toolbox/tools/:id`：查询工具详情。
+- `POST /app/toolbox/favorite`：收藏或取消收藏工具。
+- `POST /app/toolbox/usage`：记录工具打开行为。
+
+### 接口约束
+- 管理端接口走 CoolAdmin 现有权限体系。
+- 桌面端收藏和使用记录必须绑定当前登录用户。
+- 外部链接只允许 `http`、`https` 协议。
+- 本地插件第一阶段只返回配置，不执行本地命令。
+
+## 11. Admin Console Plan（后台管理端计划）
+
+在 `cool-service-master/vue/src/modules/toolbox` 新增工具箱管理模块，优先复用 `@cool-vue/crud` 和现有模块组织方式。
+
+### 页面
+- 工具分类管理：维护分类名称、编码、图标、排序、状态和备注。
+- 工具管理：维护工具名称、分类、类型、入口、打开方式、图标、标签、关键词、推荐位、排序、状态、版本和配置 JSON。
+- 使用统计：展示今日打开次数、总打开次数、热门工具排行和用户使用排行。
+
+### 交互要求
+- 管理员可快速上下架工具，不需要重新发布桌面端。
+- 工具类型和打开方式使用下拉选择，避免手填错误。
+- `entry` 根据工具类型给出明确提示：外链填 URL，内置工具填内部路由，本地插件填插件标识。
+- 配置 JSON 需要基础格式校验，避免保存非法 JSON。
+
+## 12. Electron Desktop Plan（桌面端计划）
+
+在 `cool-electron` 中开发工具箱桌面端体验，优先保证真实可用，再逐步增强视觉细节。
+
+### 页面结构
+- 首页：顶部搜索、欢迎 banner、我的收藏、推荐工具、今日使用统计、最近使用。
+- 工具列表页：按分类筛选，支持关键词搜索，支持最新、最热、收藏最多排序。
+- 工具运行页：承载内置工具页面和可嵌入工具。
+- 我的页面：用户信息、我的收藏、最近使用、同步状态。
+
+### 内置工具 MVP
+- JSON 格式化：格式化、压缩、校验 JSON。
+- Base64 编解码：文本编码、解码。
+- URL 编码/解码：URL encode/decode。
+- 文本去重：按行去重，保留顺序。
+- Markdown 预览：输入 Markdown 并实时预览。
+- 时间戳转换：时间戳与日期时间互转。
+
+### Electron 主进程能力
+- 外部链接打开：通过 `shell.openExternal` 实现，只允许安全协议。
+- 工具窗口：为部分工具创建独立窗口，逻辑放到独立 main 模块。
+- 本地缓存：第一阶段可先使用 Renderer 的 localStorage/IndexedDB；后续如需文件缓存，放到 main 独立模块。
+- preload 白名单：只暴露明确 API，禁止 renderer 直接执行 shell 或访问任意文件系统。
+
+## 13. Implementation Roadmap（实施路线）
+
+### Phase 1：后端工具箱模块
+- 新增 `cool-service-master/api/src/modules/toolbox`。
+- 实现分类、工具、收藏、使用记录实体。
+- 实现管理端 CRUD 和桌面端查询接口。
+- 初始化默认分类和内置工具数据。
+
+### Phase 2：后台管理端
+- 新增 `cool-service-master/vue/src/modules/toolbox`。
+- 实现分类管理、工具管理、基础统计页面。
+- 接入后端接口并完成基本表单校验。
+
+### Phase 3：Electron 首页与视觉
+- 重构 `cool-electron` Renderer 首页为工具箱布局。
+- 实现深色科技风 UI：左侧导航、搜索栏、banner、收藏区、推荐工具卡片。
+- 建立工具卡片、分类导航、统计卡片等可复用组件。
+
+### Phase 4：桌面端数据接入
+- 接入 `/app/toolbox/home` 和工具列表接口。
+- 实现接口失败时读取本地缓存。
+- 实现收藏、最近使用、使用次数的乐观更新和失败回滚。
+
+### Phase 5：工具打开与内置工具
+- 实现外部链接工具打开。
+- 实现内置工具内部路由。
+- 完成 JSON、Base64、URL 编码、文本去重、Markdown 预览、时间戳转换工具。
+
+### Phase 6：验证与收敛
+- 后端运行 `pnpm test` 或关键模块测试。
+- 管理端运行 `pnpm type-check` 或 `pnpm build`。
+- Electron 运行 `pnpm typecheck` 和必要的启动验证。
+- 修复明显类型错误、接口错误和交互断点。
+
+## 14. Acceptance Criteria（验收标准）
+
+### 后端
+- `cool-service-master/api` 可正常启动。
+- 工具分类、工具信息 CRUD 可用。
+- `/app/toolbox/home` 能返回桌面端首页所需数据。
+- 收藏和使用记录接口可用，并绑定用户。
+
+### 后台管理端
+- 管理员可以新增、编辑、删除、启停工具分类和工具。
+- 管理员可以配置外部链接工具和内置工具。
+- 推荐、热门、最新、排序、状态能影响桌面端展示。
+- 基础统计页面能展示工具使用数据。
+
+### 桌面端
+- 首页呈现深色科技工具箱风格。
+- 可以展示分类、收藏、推荐工具、最近使用和今日使用次数。
+- 可以搜索工具并按分类过滤。
+- 可以收藏或取消收藏工具。
+- 可以打开外部链接工具和内置工具。
+- 后端不可用时可以读取缓存或展示默认工具。
+
+### 代码质量
+- 遵循现有目录结构和 CoolAdmin / Electron 代码风格。
+- 不引入不必要的新依赖。
+- 不把业务逻辑写进 `cool-electron/src/main/index.ts`。
+- 不提交密钥、`.env`、构建产物或本地缓存。
+- 每个阶段提交前运行该阶段最相关的检查命令。
