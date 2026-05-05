@@ -4,7 +4,7 @@
   "description": "数智工具箱桌面端",
   "main": "./out/main/index.js",
   "author": "BRMTool",
-  "homepage": "https://deploy-domain.example",
+  "homepage": "https://tool.baotounews.cn",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts,.vue --fix",

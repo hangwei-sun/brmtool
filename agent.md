@@ -95,10 +95,10 @@ cd cool-service-master
 node start-dev.js
 
 # 发布产物约定
-# 管理端静态资源部署到 https://<DEPLOY_DOMAIN>/
-# 后端接口由 Nginx 反代到 https://<DEPLOY_DOMAIN>/api
-# 桌面端更新包上传到 https://<DEPLOY_DOMAIN>/updates/desktop
-# 软件下载页公开访问 https://<DEPLOY_DOMAIN>/download
+# 管理端静态资源部署到 https://tool.baotounews.cn/
+# 后端接口由 Nginx 反代到 https://tool.baotounews.cn/api
+# 桌面端更新包上传到 https://tool.baotounews.cn/updates/desktop
+# 软件下载页公开访问 https://tool.baotounews.cn/download
 ```
 
 ## 5. 开发硬约束
@@ -258,16 +258,16 @@ node start-dev.js
 
 ### P9 上线部署准备
 - 前置输入：真实域名、服务器系统、Node 版本、MySQL 地址、部署目录、HTTPS 证书来源。
-- 部署形态：采用同域名分路径，`https://<DEPLOY_DOMAIN>/` 为管理端，`/api` 为后端接口，`/updates/desktop` 为桌面端更新包静态目录。
+- 部署形态：采用同域名分路径，`https://tool.baotounews.cn/` 为管理端，`/api` 为后端接口，`/updates/desktop` 为桌面端更新包静态目录。
 - [x] 后端生产入口：`config.prod.ts` 改为读取环境变量 `BRMTOOL_PORT`、`BRMTOOL_DB_HOST`、`BRMTOOL_DB_PORT`、`BRMTOOL_DB_USER`、`BRMTOOL_DB_PASSWORD`、`BRMTOOL_DB_NAME`。
 - [x] 后端生产安全：保持 `synchronize=false`、`eps=false`、`initDB=false`、`initMenu=false`；禁止生产自动同步表结构。
 - [x] 后端环境示例：新增 `cool-service-master/api/.env.production.example`，只写变量名和占位值，不提交真实密码、JWT secret、证书、token。
 - [x] Nginx 反代规则：`/api/*` rewrite 到后端根路径，保证现有 `/admin/**`、`/app/**` 接口代码不改路径。
 - [x] Nginx 静态目录：管理端 `dist` 指向站点根路径，桌面端更新包目录指向 `/updates/desktop`，并允许 `.yml`、`.blockmap`、`.exe`、`.dmg`、`.zip` 下载。
-- [x] 管理端生产入口：生产 `baseUrl='/api'`，移除或替换 `show.cool-admin.com` 示例目标；增加 `VITE_PUBLIC_ORIGIN=https://<DEPLOY_DOMAIN>` 或同等环境变量说明。
-- [x] Electron API 入口：Main 进程统一从 `BRMTOOL_API_BASE` 读取后端地址；本地默认 `http://127.0.0.1:8001`，生产默认 `https://deploy-domain.example/api`，上线前替换真实域名。
+- [x] 管理端生产入口：生产 `baseUrl='/api'`，移除或替换 `show.cool-admin.com` 示例目标；增加 `VITE_PUBLIC_ORIGIN=https://tool.baotounews.cn` 或同等环境变量说明。
+- [x] Electron API 入口：Main 进程统一从 `BRMTOOL_API_BASE` 读取后端地址；本地默认 `http://127.0.0.1:8001`，生产默认 `https://tool.baotounews.cn/api`。
 - [x] Electron 安全边界：保留 APP 请求 IPC 白名单，只允许 `/app/toolbox/**`、`/app/user/**`、`/app/message/**`，Renderer 不允许传入任意后端 base URL。
-- [x] 构建配置：更新 `electron-builder.yml` 的 `appId`、`productName`、artifactName、`publish.provider=generic`、`publish.url=https://deploy-domain.example/updates/desktop`。
+- [x] 构建配置：更新 `electron-builder.yml` 的 `appId`、`productName`、artifactName、`publish.provider=generic`、`publish.url=https://tool.baotounews.cn/updates/desktop`。
 - [x] 部署文档：补充发布步骤，包含后端构建启动、管理端构建上传、更新包上传、回滚方式和健康检查 URL。
 
 ### P10 桌面端在线更新
@@ -303,11 +303,14 @@ node start-dev.js
 
 ### P13 上线交付收敛
 - 目标：把已完成 MVP 从本地开发态收敛为可内测上线的发布链路。
-- [ ] 确认真实上线域名、部署目录、HTTPS 证书、Node/MySQL 版本。
+- 部署方式：计划使用 1Panel 或宝塔，域名为 `tool.baotounews.cn`，首版发布 unsigned 内测包。
+- [x] 确认真实上线域名：`tool.baotounews.cn`。
+- [ ] 确认服务器部署目录、HTTPS 证书、Node/MySQL 版本。
 - [x] 新增 `scripts/configure-deploy.mjs`，用 `DEPLOY_DOMAIN` 批量替换后端、管理端、Electron、Nginx、发布文档中的生产占位域名。
 - [x] 新增 `scripts/check-release-config.mjs`，检查占位域名、敏感 env、更新包元数据和安装包目录。
 - [x] 新增 GitHub Actions `Desktop Build` 工作流，可在 macOS/Windows runner 产出桌面端安装包和更新元数据。
-- [ ] 使用真实域名运行配置脚本，替换生产占位域名：后端、管理端、Electron API base、electron-builder publish URL、下载页地址。
+- [x] 使用真实域名运行配置脚本，替换生产占位域名：后端、管理端、Electron API base、electron-builder publish URL、下载页地址。
+- [x] 新增 `docs/deploy/1panel-baota.md`，补充 1Panel/宝塔站点、反代、静态资源和更新包部署说明。
 - [ ] 使用生产 env 启动后端，验证 `/api/app/toolbox/home`、`/api/admin/base/open/eps`。
 - [ ] 部署管理端静态资源，验证登录、工具管理、消息管理、使用统计、下载页都走 `/api`。
 - [ ] 建立 Windows 或 CI 打包环境，补跑 Windows 安装包构建。
@@ -365,7 +368,7 @@ node start-dev.js
 - 登录后收藏、使用记录、受保护工具访问、个人消息可同步到后端。
 - 后台可维护 APP 用户、工具访问权限和站内消息。
 - 桌面端可展示未读消息，并对重要消息触发系统通知。
-- 上线后管理端、后端和桌面端统一指向 `https://<DEPLOY_DOMAIN>` 同域名分路径。
+- 上线后管理端、后端和桌面端统一指向 `https://tool.baotounews.cn` 同域名分路径。
 - 桌面端 macOS + Windows 安装包可通过 `/updates/desktop` 完成在线更新。
 - 软件下载页 `/download` 可公开访问，并按系统展示 macOS/Windows 下载入口。
 - 留言板作为本地插件统一出现在工具管理和桌面端工具体系中。

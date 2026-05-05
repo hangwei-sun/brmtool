@@ -44,6 +44,6 @@ appImage:
 npmRebuild: false
 publish:
   provider: generic
-  url: https://deploy-domain.example/updates/desktop
+  url: https://tool.baotounews.cn/updates/desktop
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/

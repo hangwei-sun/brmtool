@@ -10,7 +10,7 @@
 上线前先用真实域名收敛所有生产占位：
 
 ```bash
-DEPLOY_DOMAIN=toolbox.example.com node scripts/configure-deploy.mjs
+DEPLOY_DOMAIN=tool.baotounews.cn node scripts/configure-deploy.mjs
 node scripts/check-release-config.mjs --strict
 ```
 
@@ -19,6 +19,8 @@ node scripts/check-release-config.mjs --strict
 ```bash
 UPDATE_DIR=/var/www/brmtool/updates/desktop node scripts/check-release-config.mjs --strict
 ```
+
+使用 1Panel 或宝塔部署时，优先参考 `docs/deploy/1panel-baota.md`。
 
 ## 2. 后端
 
@@ -32,8 +34,8 @@ NODE_ENV=production node ./bootstrap.js
 经 Nginx 验证：
 
 ```bash
-curl https://deploy-domain.example/api/app/toolbox/home
-curl https://deploy-domain.example/api/admin/base/open/eps
+curl https://tool.baotounews.cn/api/app/toolbox/home
+curl https://tool.baotounews.cn/api/admin/base/open/eps
 ```
 
 ## 3. 管理端

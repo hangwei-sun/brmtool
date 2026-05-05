@@ -8,7 +8,7 @@ const positionalDomain = process.argv.slice(2).find((item) => !item.startsWith('
 const rawDomain = process.env.DEPLOY_DOMAIN || positionalDomain
 
 if (!rawDomain.trim()) {
-  console.error('DEPLOY_DOMAIN is required, for example: DEPLOY_DOMAIN=toolbox.example.com node scripts/configure-deploy.mjs')
+  console.error('DEPLOY_DOMAIN is required, for example: DEPLOY_DOMAIN=tool.baotounews.cn node scripts/configure-deploy.mjs')
   process.exit(1)
 }
 

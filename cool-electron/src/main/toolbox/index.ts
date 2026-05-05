@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync, rmSync, existsSync } from 'fs'
 import { join } from 'path'
 
 const DEFAULT_DEV_API_BASE = 'http://127.0.0.1:8001'
-const DEFAULT_PROD_API_BASE = 'https://deploy-domain.example/api'
+const DEFAULT_PROD_API_BASE = 'https://tool.baotounews.cn/api'
 const TIMEOUT_MS = 8000
 const ALLOWED_METHODS = new Set(['GET', 'POST'])
 const APP_PATH_PREFIXES = ['/app/toolbox/', '/app/user/', '/app/message/']
