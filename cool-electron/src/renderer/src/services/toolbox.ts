@@ -17,6 +17,7 @@ export interface ToolboxTool {
   code: string
   description: string
   icon: string
+  sort?: number
   type: ToolType
   entry: string
   openMode: OpenMode
@@ -83,6 +84,7 @@ export const defaultTools: ToolboxTool[] = [
     code: 'json-format',
     description: '格式化、压缩、校验 JSON 数据。',
     icon: '{}',
+    sort: 10,
     type: 'internal_web',
     entry: '/tools/json-format',
     openMode: 'internal_route',
@@ -99,6 +101,7 @@ export const defaultTools: ToolboxTool[] = [
     code: 'base64-codec',
     description: 'Base64 文本编码和解码工具。',
     icon: 'B64',
+    sort: 20,
     type: 'internal_web',
     entry: '/tools/base64',
     openMode: 'internal_route',
@@ -115,6 +118,7 @@ export const defaultTools: ToolboxTool[] = [
     code: 'url-codec',
     description: 'URL encode/decode，支持常见链接、参数和值转换。',
     icon: 'URL',
+    sort: 30,
     type: 'internal_web',
     entry: '/tools/url-codec',
     openMode: 'internal_route',
@@ -130,6 +134,7 @@ export const defaultTools: ToolboxTool[] = [
     code: 'text-dedupe',
     description: '按行去除重复文本，保留原始顺序。',
     icon: 'TXT',
+    sort: 40,
     type: 'internal_web',
     entry: '/tools/text-dedupe',
     openMode: 'internal_route',
@@ -145,6 +150,7 @@ export const defaultTools: ToolboxTool[] = [
     code: 'markdown-preview',
     description: '实时预览 Markdown 文档效果。',
     icon: 'MD',
+    sort: 50,
     type: 'internal_web',
     entry: '/tools/markdown-preview',
     openMode: 'internal_route',
@@ -160,6 +166,7 @@ export const defaultTools: ToolboxTool[] = [
     code: 'timestamp-convert',
     description: '时间戳与日期时间相互转换。',
     icon: 'CLK',
+    sort: 60,
     type: 'internal_web',
     entry: '/tools/timestamp',
     openMode: 'internal_route',
@@ -176,6 +183,7 @@ export const defaultTools: ToolboxTool[] = [
     code: 'cool-admin-docs',
     description: '打开 COOL Admin Node 官方文档。',
     icon: 'DOC',
+    sort: 100,
     type: 'external_link',
     entry: 'https://node.cool-admin.com/src/introduce/',
     openMode: 'embedded_webview',
@@ -190,6 +198,7 @@ export const defaultTools: ToolboxTool[] = [
     code: 'feedback-board',
     description: '登录用户提交工具箱使用建议，管理员后台可查看处理。',
     icon: 'MSG',
+    sort: 90,
     type: 'local_plugin',
     entry: 'feedback-board',
     openMode: 'internal_route',
@@ -203,11 +212,13 @@ export const defaultTools: ToolboxTool[] = [
 
 export const defaultHome: ToolboxHomeData = {
   categories: defaultCategories,
-  recommendTools: defaultTools.filter((tool) => isTruthy(tool.isRecommend)),
-  newTools: defaultTools.filter((tool) => isTruthy(tool.isNew)),
-  hotTools: defaultTools.filter((tool) => isTruthy(tool.isHot)),
-  favoriteTools: defaultTools.slice(0, 5).map((tool) => ({ ...tool, isFavorite: true })),
-  recentTools: defaultTools.slice(0, 3),
+  recommendTools: sortToolsByBackendOrder(defaultTools.filter((tool) => isTruthy(tool.isRecommend))),
+  newTools: sortToolsByBackendOrder(defaultTools.filter((tool) => isTruthy(tool.isNew))),
+  hotTools: sortToolsByBackendOrder(defaultTools.filter((tool) => isTruthy(tool.isHot))),
+  favoriteTools: sortToolsByBackendOrder(defaultTools)
+    .slice(0, 5)
+    .map((tool) => ({ ...tool, isFavorite: true })),
+  recentTools: sortToolsByBackendOrder(defaultTools).slice(0, 3),
   usageStats: { todayCount: 23, totalCount: 96 }
 }
 
@@ -216,17 +227,27 @@ export function isTruthy(value: unknown) {
 }
 
 export function mergeTools(...groups: ToolboxTool[][]) {
-  const map = new Map<number, ToolboxTool>()
+  const map = new Map<string, ToolboxTool>()
   groups.flat().forEach((tool) => {
-    map.set(tool.id, normalizeTool({ ...map.get(tool.id), ...tool }))
+    const key = tool.code || String(tool.id)
+    map.set(key, normalizeTool({ ...map.get(key), ...tool }))
   })
-  return Array.from(map.values())
+  return sortToolsByBackendOrder(Array.from(map.values()))
+}
+
+export function compareToolSort(a: ToolboxTool, b: ToolboxTool) {
+  return Number(b.sort || 0) - Number(a.sort || 0) || Number(b.id || 0) - Number(a.id || 0)
+}
+
+export function sortToolsByBackendOrder(tools: ToolboxTool[]) {
+  return [...tools].sort(compareToolSort)
 }
 
 export function normalizeTool(tool: ToolboxTool): ToolboxTool {
   return {
     ...tool,
     icon: normalizeIcon(tool.icon, tool.code),
+    sort: Number.isFinite(Number(tool.sort)) ? Number(tool.sort) : 0,
     tags: Array.isArray(tool.tags) ? tool.tags : [],
     isRecommend: isTruthy(tool.isRecommend),
     isHot: isTruthy(tool.isHot),
@@ -273,7 +294,7 @@ export async function fetchToolboxTools(params: {
   query.set('size', '40')
 
   const data = await toolboxRequest<{ list: ToolboxTool[] }>(`/app/toolbox/tools?${query}`)
-  return data.list.map(normalizeTool)
+  return sortToolsByBackendOrder(data.list.map(normalizeTool))
 }
 
 export async function toggleFavoriteRemote(toolId: number) {

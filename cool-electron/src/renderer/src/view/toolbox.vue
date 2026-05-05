@@ -7,6 +7,7 @@ import ToolCard from '../components/toolbox/ToolCard.vue'
 import logoUrl from '../assets/electron.svg'
 import bannerUrl from '../assets/toolbox-banner.svg'
 import {
+  compareToolSort,
   defaultHome,
   fetchToolboxHome,
   fetchToolboxTools,
@@ -154,17 +155,21 @@ const filteredTools = computed(() => {
   })
 
   if (activeTab.value === 'favorite') {
-    return result.filter((tool) => favoriteIds.value.has(tool.id))
+    return result.filter((tool) => favoriteIds.value.has(tool.id)).sort(compareToolSort)
   }
 
   if (activeTab.value === 'hot') {
-    return [...result].sort((a, b) => Number(isTruthy(b.isHot)) - Number(isTruthy(a.isHot)))
+    return [...result].sort(
+      (a, b) => Number(isTruthy(b.isHot)) - Number(isTruthy(a.isHot)) || compareToolSort(a, b)
+    )
   }
 
-  return [...result].sort((a, b) => Number(isTruthy(b.isNew)) - Number(isTruthy(a.isNew)))
+  return [...result].sort(
+    (a, b) => Number(isTruthy(b.isNew)) - Number(isTruthy(a.isNew)) || compareToolSort(a, b)
+  )
 })
 
-const favoriteTools = computed(() => tools.value.filter((tool) => favoriteIds.value.has(tool.id)))
+const favoriteTools = computed(() => tools.value.filter((tool) => favoriteIds.value.has(tool.id)).sort(compareToolSort))
 const recommendTools = computed(() => filteredTools.value)
 const showHomeBanner = computed(() => activeCategory.value === 'all')
 const homepageBannerUrl = computed(() => bannerUrl)
@@ -242,12 +247,12 @@ async function loadToolList() {
 function applyHome(home: typeof defaultHome) {
   categories.value = home.categories
   tools.value = mergeTools(
+    defaultHome.recommendTools,
     home.recommendTools,
     home.newTools,
     home.hotTools,
     home.favoriteTools,
-    home.recentTools,
-    defaultHome.recommendTools
+    home.recentTools
   )
   if (isLoggedIn.value || home.favoriteTools.length) {
     favoriteIds.value = new Set(home.favoriteTools.map((tool) => tool.id))

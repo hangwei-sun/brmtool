@@ -15,8 +15,8 @@ import { ToolboxToolService } from '../../service/tool';
     keyWordLikeFields: ['name', 'code', 'description', 'keywords'],
     fieldEq: ['categoryId', 'type', 'status', 'isRecommend', 'isHot', 'isNew'],
     addOrderBy: {
-      sort: 'ASC',
-      createTime: 'ASC',
+      sort: 'DESC',
+      createTime: 'DESC',
     },
   },
   pageQueryOp: {
@@ -38,8 +38,8 @@ import { ToolboxToolService } from '../../service/tool';
       },
     ],
     addOrderBy: {
-      'a.sort': 'ASC',
-      'a.createTime': 'ASC',
+      'a.sort': 'DESC',
+      'a.createTime': 'DESC',
     },
   },
 })

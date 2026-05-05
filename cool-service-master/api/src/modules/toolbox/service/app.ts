@@ -88,7 +88,7 @@ export class ToolboxAppService {
       qb.addOrderBy('a.isRecommend', 'DESC');
     }
 
-    qb.addOrderBy('a.sort', 'ASC').addOrderBy('a.createTime', 'ASC');
+    qb.addOrderBy('a.sort', 'DESC').addOrderBy('a.createTime', 'DESC');
 
     const [list, total] = await qb
       .skip((page - 1) * size)
@@ -188,8 +188,6 @@ export class ToolboxAppService {
   private async favoriteTools(userId: number) {
     const favorites = await this.favoriteRepo.find({
       where: { userId },
-      order: { createTime: 'DESC' },
-      take: 12,
     });
     if (favorites.length === 0) {
       return [];
@@ -199,10 +197,15 @@ export class ToolboxAppService {
       status: 1,
     });
     const toolMap = new Map(tools.map(e => [e.id, e]));
-    return favorites
+    const favoriteTools = favorites
       .map(e => toolMap.get(e.toolId))
-      .filter(Boolean)
-      .map(e => ({ ...e, isFavorite: true }));
+      .filter(Boolean) as ToolboxToolEntity[];
+    return this.sortToolsByBackendOrder(favoriteTools)
+      .slice(0, 12)
+      .map(e => ({
+        ...e,
+        isFavorite: true,
+      }));
   }
 
   private async recentTools(userId: number) {
@@ -337,5 +340,13 @@ export class ToolboxAppService {
   private normalizeClientType(clientType: string) {
     const value = String(clientType || 'electron').trim();
     return value.slice(0, 30) || 'electron';
+  }
+
+  private sortToolsByBackendOrder(tools: ToolboxToolEntity[]) {
+    return tools.sort(
+      (a, b) =>
+        Number(b.sort || 0) - Number(a.sort || 0) ||
+        Number(b.id || 0) - Number(a.id || 0)
+    );
   }
 }
