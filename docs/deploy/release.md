@@ -7,6 +7,19 @@
 - 桌面端：复制 `cool-electron/.env.production.example` 为 `.env.production`，填写真实 `BRMTOOL_API_BASE`。
 - 禁止提交真实 `.env.production`、数据库密码、签名证书和发布 token。
 
+上线前先用真实域名收敛所有生产占位：
+
+```bash
+DEPLOY_DOMAIN=toolbox.example.com node scripts/configure-deploy.mjs
+node scripts/check-release-config.mjs --strict
+```
+
+如需同时检查更新包目录：
+
+```bash
+UPDATE_DIR=/var/www/brmtool/updates/desktop node scripts/check-release-config.mjs --strict
+```
+
 ## 2. 后端
 
 ```bash
@@ -44,6 +57,14 @@ pnpm build:win --publish never
 ```
 
 将安装包、`latest.yml`、`latest-mac.yml`、`.blockmap` 上传到 `/var/www/brmtool/updates/desktop`。
+
+也可以在 GitHub Actions 手动运行 `Desktop Build` 工作流，输入真实 `deploy_domain` 后分别产出 macOS 和 Windows artifact。Windows 安装包优先使用该工作流或 Windows 机器构建，避免 Apple Silicon 本机 wine 兼容问题。
+
+上传后再次检查更新目录：
+
+```bash
+UPDATE_DIR=/var/www/brmtool/updates/desktop node scripts/check-release-config.mjs --strict
+```
 
 ## 5. 回滚
 

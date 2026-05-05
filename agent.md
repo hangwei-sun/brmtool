@@ -10,9 +10,11 @@
 - 后端：提供工具配置、收藏、使用记录、统计、登录鉴权、站内消息接口。
 
 ### MVP 范围
-- 支持工具类型：`external_link` 外部链接、`internal_web` 内置 Web 工具、`local_plugin` 本地插件预留。
-- 首批内置工具：JSON 格式化、Base64 编解码、URL 编码/解码、文本去重、Markdown 预览、时间戳转换。
-- 下一阶段：上线部署准备、桌面端在线更新、发布包验证。
+- 核心 MVP 已完成：工具管理、桌面首页、搜索、收藏、打开工具、使用统计、本地缓存。
+- 扩展 MVP 已完成：登录权限、消息通知、留言板插件、内嵌 WebView、软件下载页、桌面端在线更新。
+- 支持工具类型：`external_link` 外部链接、`internal_web` 内置 Web 工具、`local_plugin` 本地插件。
+- 首批内置工具已完成：JSON 格式化、Base64 编解码、URL 编码/解码、文本去重、Markdown 预览、时间戳转换。
+- 下一阶段：P13 上线交付收敛，聚焦真实域名部署、CI/Windows 打包、在线更新全链路验证和发布检查。
 - 暂缓：插件市场、第三方插件沙箱、插件自动更新、任意本地命令执行、移动端适配。
 
 ### 进度跟踪
@@ -28,9 +30,11 @@
 | P7 登录与访问权限 | 已完成 | APP 用户登录、token 注入、工具级访问控制 |
 | P8 消息通知 | 已完成 | 后台消息管理、桌面端站内信、系统通知 |
 | P9 上线部署准备 | 已完成 | 生产 env、Nginx 示例、后端/管理端/桌面端入口配置 |
-| P10 桌面端在线更新 | 已完成 | electron-updater、更新检查、自动下载、提示安装；Windows 打包待 CI/Windows 机器补跑 |
+| P10 桌面端在线更新 | 已完成 | electron-updater、更新检查、自动下载、提示安装、更新产物配置 |
 | P11 插件化与内嵌浏览体验 | 已完成 | 留言板本地插件、工具管理统一入口、内嵌 WebView 全屏自适应、侧栏折叠 |
 | P12 软件下载页 | 已完成 | `/download` 公开下载单页、系统识别 macOS/Windows、下载地址环境变量配置 |
+| P13 上线交付收敛 | 进行中 | 域名配置脚本、发布检查、CI/Windows 打包、更新链路验证 |
+| P14 上线后运营增强 | 进行中 | 运营路线图、数据看板、插件体系、后台配置化增强 |
 
 ## 2. 项目结构与技术栈
 
@@ -122,15 +126,17 @@ node start-dev.js
 
 ### 实体
 - `ToolboxCategoryEntity`：`name`、`code`、`icon`、`sort`、`status`、`remark`。
-- `ToolboxToolEntity`：`categoryId`、`name`、`code`、`description`、`icon`、`type`、`entry`、`openMode`、`tags`、`keywords`、`isRecommend`、`isHot`、`isNew`、`sort`、`status`、`version`、`config`、`remark`。
+- `ToolboxToolEntity`：`categoryId`、`name`、`code`、`description`、`icon`、`type`、`entry`、`openMode`、`tags`、`keywords`、`isRecommend`、`isHot`、`isNew`、`authRequired`、`sort`、`status`、`version`、`config`、`remark`。
 - `ToolboxFavoriteEntity`：`userId`、`toolId`，同一用户同一工具唯一。
 - `ToolboxUsageEntity`：`userId`、`toolId`、`toolName`、`action=open`、`clientType=electron`、`createdAt`。
-- 下一阶段 `ToolboxToolEntity` 增加 `authRequired`：`0=公开`，`1=登录后可用`，默认公开。
-- 下一阶段新增消息模块：`MessageInfoEntity` 保存标题、内容、等级、目标范围、跳转动作、发布时间、状态；`MessageReadEntity` 保存 `messageId + userId` 已读状态。
+- `ToolboxFeedbackEntity`：留言板插件数据，保存用户建议、联系方式、处理状态和回复内容。
+- `MessageInfoEntity`：保存标题、内容、等级、目标范围、跳转动作、发布时间、状态。
+- `MessageReadEntity`：保存 `messageId + userId` 已读状态。
 
 ### 接口
 - 管理端：分类 CRUD、工具 CRUD、启停/推荐/热门/最新/排序、使用统计。
 - 登录：复用 APP 用户体系，桌面端用 `/app/user/login/password` 和 `/app/user/info/person`。
+- 留言板：桌面端提交我的建议，后台查看、更新、删除留言数据。
 - 消息：
   - `GET /app/message/list`
   - `GET /app/message/unreadCount`
@@ -149,16 +155,18 @@ node start-dev.js
 - 收藏和使用记录绑定当前用户。
 - Electron Main 请求后端必须走白名单 IPC，允许 `/app/toolbox/**`、`/app/user/**`、`/app/message/**`，并自动注入 `Authorization`。
 - 未登录用户只能打开公开工具；受保护工具必须由后端和桌面端同时拦截。
+- 工具排序统一按 `sort` 数字倒序展示，数字越大越靠前；后台工具列表和桌面端工具列表保持一致。
 
 ## 7. 管理端设计摘要
 
 管理端新增模块：`cool-service-master/vue/src/modules/toolbox`，优先复用 `@cool-vue/crud`。
 
 - 分类管理：名称、编码、图标、排序、状态、备注。
-- 工具管理：名称、分类、类型、入口、打开方式、图标、标签、关键词、推荐位、排序、状态、版本、配置 JSON。
-- 使用统计：今日打开次数、总打开次数、热门工具排行、用户使用排行。
+- 工具管理：名称、分类、类型、入口、打开方式、图标、标签、关键词、推荐位、排序、状态、版本、配置 JSON；工具列表按 `sort` 倒序展示。
+- 使用统计：今日打开次数、总打开次数、热门工具排行、用户使用排行、用户具体工具使用明细。
 - APP 用户管理：后台创建或维护手机号、昵称、状态、密码；密码保存前统一加密，避免明文无法登录。
 - 消息管理：创建、编辑、发布、下线消息；支持全体用户和指定用户；可配置消息等级、跳转动作。
+- 留言板管理：留言板作为 `local_plugin` 工具统一出现在工具管理中，工具行提供留言数据入口。
 - 表单要求：类型和打开方式用下拉；`config` 做 JSON 格式校验；`entry` 根据类型展示提示。
 - 工具表单新增访问权限：公开访问、登录后访问。
 
@@ -170,11 +178,13 @@ node start-dev.js
 - 工具运行页：承载内置工具或可嵌入工具。
 - 我的区域：未登录显示登录入口；已登录显示用户信息、退出登录、同步状态。
 - 消息通知：顶部通知入口展示未读数，消息抽屉展示列表和详情；重要消息触发系统通知。
+- 软件下载页：管理端提供 `/download` 公开单页，根据系统展示 macOS/Windows 下载入口。
 
 ### 数据流
 - 启动时请求 `/app/toolbox/home`；成功后写本地缓存。
 - 启动时恢复本地登录态；接口请求由 Main 进程统一注入 token；token 失效时尝试 refresh，失败则静默退出登录。
 - 接口失败时读取缓存；无缓存时展示内置默认工具。
+- 工具列表、本地缓存和默认工具合并后按 `sort` 倒序展示。
 - 未登录收藏只保留本地临时状态；登录后收藏同步到后端。
 - 打开工具后记录 `/app/toolbox/usage`，并更新本地最近使用和今日次数。
 - 点击受保护工具时，未登录先弹登录框；登录成功后继续打开原工具。
@@ -183,7 +193,7 @@ node start-dev.js
 ### 打开方式
 - `external_browser`：主进程 `shell.openExternal`。
 - `electron_window`：主进程创建独立工具窗口。
-- `embedded_webview`：后续按安全策略评估。
+- `embedded_webview`：桌面端内嵌 WebView 打开，提供返回、刷新、返回首页、关闭和地址栏。
 - `internal_route`：Renderer 内部路由。
 
 ## 9. 分阶段实施清单
@@ -270,8 +280,6 @@ node start-dev.js
 - [x] Renderer UI：在顶部和“我的”菜单增加“检查更新”，用现有深色模态框展示当前版本、最新版本、下载进度、错误和安装按钮。
 - [x] 用户体验：自动下载时不阻塞工具使用；下载完成弹出“立即重启安装 / 稍后”；稍后安装保留入口。
 - [x] 发布产物：macOS 已配置生成 `latest-mac.yml`、dmg、zip、blockmap；Windows 配置生成 NSIS 安装包、`latest.yml` 和 blockmap。
-- [ ] 本地模拟：仍需用本地静态服务模拟 `/updates/desktop`，安装旧版本后验证检查更新、进度事件、下载完成、点击安装流程。
-- [ ] 签名策略：macOS 签名/公证、Windows 代码签名作为上线前增强项；当前本机未配置签名证书。
 - [x] 回滚策略：保留上一版更新包和元数据备份；如新版本异常，恢复旧版 `latest*.yml` 指向稳定版本。
 
 ### P11 插件化与内嵌浏览体验
@@ -293,6 +301,28 @@ node start-dev.js
 - [x] `.env.production.example` 补充下载地址示例，建议指向 `/updates/desktop` 下的静态安装包别名。
 - [x] 下载页不调用后端接口，不新增数据库表，不影响管理端登录和后台功能。
 
+### P13 上线交付收敛
+- 目标：把已完成 MVP 从本地开发态收敛为可内测上线的发布链路。
+- [ ] 确认真实上线域名、部署目录、HTTPS 证书、Node/MySQL 版本。
+- [x] 新增 `scripts/configure-deploy.mjs`，用 `DEPLOY_DOMAIN` 批量替换后端、管理端、Electron、Nginx、发布文档中的生产占位域名。
+- [x] 新增 `scripts/check-release-config.mjs`，检查占位域名、敏感 env、更新包元数据和安装包目录。
+- [x] 新增 GitHub Actions `Desktop Build` 工作流，可在 macOS/Windows runner 产出桌面端安装包和更新元数据。
+- [ ] 使用真实域名运行配置脚本，替换生产占位域名：后端、管理端、Electron API base、electron-builder publish URL、下载页地址。
+- [ ] 使用生产 env 启动后端，验证 `/api/app/toolbox/home`、`/api/admin/base/open/eps`。
+- [ ] 部署管理端静态资源，验证登录、工具管理、消息管理、使用统计、下载页都走 `/api`。
+- [ ] 建立 Windows 或 CI 打包环境，补跑 Windows 安装包构建。
+- [ ] 本地或测试服务器模拟 `/updates/desktop`，验证旧版本升级到新版本。
+- [ ] 上传 macOS/Windows 安装包、`latest*.yml`、blockmap，并记录回滚方式。
+- [ ] 明确正式发布签名策略：内测可先 unsigned，公开发布前补齐 macOS 签名/公证和 Windows 代码签名。
+
+### P14 上线后运营增强
+- [x] 新增 `docs/operations/p14-roadmap.md`，明确上线后运营增强路线图和暂缓边界。
+- [ ] 运营数据看板：在现有使用统计基础上补充时间范围筛选、趋势图、工具转化排行、导出字段配置。
+- [ ] 下载页配置化：将 macOS/Windows 下载地址、版本号、更新说明从环境变量升级为后台配置。
+- [ ] 消息触达增强：支持按用户、工具使用行为、最近活跃时间筛选发送站内信。
+- [ ] 留言板运营闭环：增加处理人、处理耗时、常见反馈分类和状态筛选。
+- [ ] 插件体系准备：定义插件元信息、权限说明、运行入口、配置 schema 和审核状态。
+
 ### P6 验证记录
 - 后端：`pnpm lint`、`pnpm build` 通过；本机 MySQL 下 `/app/toolbox/home`、工具列表、工具详情返回正常。
 - 管理端：`pnpm type-check`、`pnpm build` 通过；在线 EPS 可识别 `toolbox` 模块。
@@ -305,7 +335,7 @@ node start-dev.js
 - 桌面端：`pnpm typecheck`、`pnpm build` 通过。
 - 说明：后端 `pnpm build` 会生成临时 `src/index.ts`，验证后已移除该生成文件，避免提交构建产物。
 
-### P9/P10 计划验证项
+### P13 验证计划
 - 配置检查：搜索确认生产代码不再残留 `show.cool-admin.com`、`https://example.com/auto-updates`、生产数据库示例密码和真实密钥。
 - 后端：`pnpm lint`、`pnpm build`；使用生产环境变量启动一次，验证 `/api/app/toolbox/home`、`/api/admin/base/open/eps` 经 Nginx 可达。
 - 管理端：`pnpm type-check`、`pnpm build`；部署静态产物后验证登录、工具管理、消息管理、使用统计接口都走 `/api`。
@@ -325,7 +355,7 @@ node start-dev.js
 - 后端：`pnpm build`、`pnpm lint` 通过；构建生成的临时 `src/index.ts` 已移除。
 - 管理端：`pnpm type-check`、`pnpm build` 通过；`/download` 已生成独立下载页 chunk。
 - 桌面端：`pnpm typecheck`、`pnpm build` 通过。
-- 说明：Windows 安装包与在线更新完整链路仍需在 Windows 机器或 CI 上补充验证。
+- 说明：Windows 安装包与在线更新完整链路已纳入 P13 上线交付收敛。
 
 ## 10. 验收标准
 

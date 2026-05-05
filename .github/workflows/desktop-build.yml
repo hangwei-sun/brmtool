@@ -1,0 +1,105 @@
+name: Desktop Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_domain:
+        description: 'Production domain, for example toolbox.example.com'
+        required: true
+        default: 'deploy-domain.example'
+      build_macos:
+        description: 'Build macOS package'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+      build_windows:
+        description: 'Build Windows package'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+jobs:
+  macos:
+    if: ${{ inputs.build_macos == 'true' }}
+    name: macOS Desktop Package
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: cool-electron/pnpm-lock.yaml
+
+      - name: Configure deploy domain
+        run: node scripts/configure-deploy.mjs
+        env:
+          DEPLOY_DOMAIN: ${{ inputs.deploy_domain }}
+
+      - name: Install dependencies
+        working-directory: cool-electron
+        run: pnpm install --frozen-lockfile
+
+      - name: Build macOS package
+        working-directory: cool-electron
+        run: pnpm build:mac --publish never
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: brmtool-macos
+          path: |
+            cool-electron/dist/*.dmg
+            cool-electron/dist/*.zip
+            cool-electron/dist/*.blockmap
+            cool-electron/dist/latest-mac.yml
+          if-no-files-found: error
+
+  windows:
+    if: ${{ inputs.build_windows == 'true' }}
+    name: Windows Desktop Package
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: cool-electron/pnpm-lock.yaml
+
+      - name: Configure deploy domain
+        run: node scripts/configure-deploy.mjs
+        env:
+          DEPLOY_DOMAIN: ${{ inputs.deploy_domain }}
+
+      - name: Install dependencies
+        working-directory: cool-electron
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Windows package
+        working-directory: cool-electron
+        run: pnpm build:win --publish never
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: brmtool-windows
+          path: |
+            cool-electron/dist/*.exe
+            cool-electron/dist/*.blockmap
+            cool-electron/dist/latest.yml
+          if-no-files-found: error

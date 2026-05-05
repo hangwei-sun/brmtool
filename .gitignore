@@ -16,5 +16,10 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+.env
+.env.*
+!.env.example
+!.env.*.example
+!cool-service-master/vue/.env
 .env.local
 .env.*.local
