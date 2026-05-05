@@ -74,6 +74,31 @@ export interface AuthSession {
   user?: unknown
 }
 
+export interface UpdateStatus {
+  phase:
+    | 'idle'
+    | 'checking'
+    | 'available'
+    | 'not-available'
+    | 'downloading'
+    | 'downloaded'
+    | 'error'
+  message: string
+  currentVersion: string
+  latestVersion?: string
+  percent?: number
+  transferred?: number
+  total?: number
+  bytesPerSecond?: number
+  error?: string
+}
+
+export interface UpdateResult {
+  success: boolean
+  data?: UpdateStatus
+  error?: string
+}
+
 /** 暴露给 Renderer 的完整 IPC API 类型定义 */
 export interface IpcApi {
   // IPC 通信模块
@@ -97,6 +122,12 @@ export interface IpcApi {
   // 工具箱模块
   toolboxRequest: (payload: ToolboxRequestPayload) => Promise<ToolboxRequestResult>
   openExternalTool: (url: string) => Promise<NotificationResult>
+  // 在线更新模块
+  checkForUpdates: () => Promise<UpdateResult>
+  installUpdate: () => Promise<NotificationResult>
+  getUpdateStatus: () => Promise<UpdateResult>
+  onUpdateStatus: (callback: (data: UpdateStatus) => void) => void
+  offUpdateStatus: () => void
 }
 
 declare global {

@@ -18,7 +18,18 @@
 		</cl-row>
 
 		<cl-row>
-			<cl-table ref="Table" />
+			<cl-table ref="Table">
+				<template #slot-feedback="{ scope }">
+					<el-button
+						v-if="scope.row?.code === 'feedback-board'"
+						text
+						type="primary"
+						@click="openFeedbackManager"
+					>
+						留言数据
+					</el-button>
+				</template>
+			</cl-table>
 		</cl-row>
 
 		<cl-row>
@@ -50,9 +61,11 @@ defineOptions({
 import { useCrud, useTable, useUpsert } from '@cool-vue/crud';
 import { ElMessage } from 'element-plus';
 import { computed, onMounted, reactive, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { useCool } from '/@/cool';
 
 const { service } = useCool();
+const router = useRouter();
 
 const categoryOptions = ref<{ label: string; value: number }[]>([]);
 
@@ -154,6 +167,27 @@ async function refreshCategories() {
 	}));
 }
 
+async function syncFeedbackTool() {
+	try {
+		const toolService = service.toolbox.tool as any;
+
+		if (typeof toolService.ensureFeedbackTool === 'function') {
+			await toolService.ensureFeedbackTool();
+		} else {
+			await toolService.request({
+				url: '/ensureFeedbackTool',
+				method: 'POST'
+			});
+		}
+	} catch (error) {
+		console.warn('[toolbox] sync feedback tool failed', error);
+	}
+}
+
+function openFeedbackManager() {
+	router.push('/toolbox/feedback');
+}
+
 const Table = useTable({
 	columns: [
 		{
@@ -233,7 +267,8 @@ const Table = useTable({
 		},
 		{
 			type: 'op',
-			width: 160
+			buttons: ['slot-feedback', 'edit', 'delete'],
+			width: 220
 		}
 	]
 });
@@ -487,7 +522,9 @@ const Crud = useCrud(
 	}
 );
 
-onMounted(() => {
-	refreshCategories();
+onMounted(async () => {
+	await refreshCategories();
+	await syncFeedbackTool();
+	Crud.value?.refresh();
 });
 </script>

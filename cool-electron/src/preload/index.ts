@@ -60,7 +60,27 @@ const api = {
     ipcRenderer.invoke('toolbox:request', payload),
 
   /** 使用系统浏览器打开工具外链 */
-  openExternalTool: (url: string) => ipcRenderer.invoke('toolbox:open-external', url)
+  openExternalTool: (url: string) => ipcRenderer.invoke('toolbox:open-external', url),
+
+  // ── 在线更新模块（Renderer → Main）────────────────────────────────
+  /** 主动检查桌面端更新 */
+  checkForUpdates: () => ipcRenderer.invoke('updater:check'),
+
+  /** 安装已下载的更新 */
+  installUpdate: () => ipcRenderer.invoke('updater:install'),
+
+  /** 获取最近一次更新状态 */
+  getUpdateStatus: () => ipcRenderer.invoke('updater:get-status'),
+
+  /** 监听更新状态 */
+  onUpdateStatus: (callback: (data: unknown) => void) => {
+    ipcRenderer.on('updater:status', (_event, data) => callback(data))
+  },
+
+  /** 取消监听更新状态 */
+  offUpdateStatus: () => {
+    ipcRenderer.removeAllListeners('updater:status')
+  }
 }
 
 if (process.contextIsolated) {

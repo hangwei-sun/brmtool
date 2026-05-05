@@ -156,6 +156,55 @@
             "childMenus": []
           }
         ]
+      },
+      {
+        "name": "使用建议",
+        "router": "/toolbox/feedback",
+        "perms": null,
+        "type": 1,
+        "icon": "icon-message",
+        "orderNum": 4,
+        "viewPath": "modules/toolbox/views/feedback.vue",
+        "keepAlive": true,
+        "isShow": false,
+        "childMenus": [
+          {
+            "name": "删除",
+            "router": null,
+            "perms": "toolbox:feedback:delete",
+            "type": 2,
+            "icon": null,
+            "orderNum": 1,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          },
+          {
+            "name": "修改",
+            "router": null,
+            "perms": "toolbox:feedback:update",
+            "type": 2,
+            "icon": null,
+            "orderNum": 2,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          },
+          {
+            "name": "查询",
+            "router": null,
+            "perms": "toolbox:feedback:page,toolbox:feedback:list,toolbox:feedback:info",
+            "type": 2,
+            "icon": null,
+            "orderNum": 3,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          }
+        ]
       }
     ]
   }

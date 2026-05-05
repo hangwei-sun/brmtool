@@ -14,6 +14,7 @@ import {
   TagTypes,
 } from '@cool-midway/core';
 import { ToolboxAppService } from '../../service/app';
+import { ToolboxFeedbackService } from '../../service/feedback';
 
 /**
  * 工具箱-桌面端接口
@@ -26,6 +27,9 @@ export class AppToolboxController extends BaseController {
 
   @Inject()
   toolboxAppService: ToolboxAppService;
+
+  @Inject()
+  toolboxFeedbackService: ToolboxFeedbackService;
 
   @CoolTag(TagTypes.IGNORE_TOKEN)
   @Get('/home', { summary: '工具箱首页数据' })
@@ -85,6 +89,20 @@ export class AppToolboxController extends BaseController {
         Number(toolId),
         clientType || 'electron'
       )
+    );
+  }
+
+  @Get('/feedback/mine', { summary: '我的使用建议' })
+  async feedbackMine() {
+    return this.ok(
+      await this.toolboxFeedbackService.mine(this.currentUserId())
+    );
+  }
+
+  @Post('/feedback/submit', { summary: '提交使用建议' })
+  async feedbackSubmit(@Body() body) {
+    return this.ok(
+      await this.toolboxFeedbackService.submit(this.currentUserId(), body)
     );
   }
 

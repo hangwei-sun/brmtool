@@ -42,6 +42,14 @@ import {
   markMessageRead,
   type AppMessage
 } from '../services/message'
+import {
+  checkForUpdates,
+  getUpdateStatus,
+  installUpdate,
+  offUpdateStatus,
+  onUpdateStatus,
+  type DesktopUpdateStatus
+} from '../services/updater'
 
 type ToolTab = 'new' | 'hot' | 'favorite'
 
@@ -62,6 +70,7 @@ const favoriteIds = ref(readFavoriteIds())
 const recentTools = ref(readRecentTools())
 const usageStats = ref(readUsageStats())
 const activeTool = ref<ToolboxTool | null>(null)
+const sidebarCollapsed = ref(readSidebarCollapsed())
 const syncStatus = ref('正在准备工具箱')
 const isSyncing = ref(false)
 const currentUser = ref<AppUser | null>(null)
@@ -81,6 +90,15 @@ const showProfile = ref(false)
 const isSavingProfile = ref(false)
 const profileError = ref('')
 const profileStatus = ref('')
+const showUpdateDialog = ref(false)
+const isCheckingUpdate = ref(false)
+const isInstallingUpdate = ref(false)
+const updateError = ref('')
+const updateStatus = ref<DesktopUpdateStatus>({
+  phase: 'idle',
+  message: '尚未检查更新',
+  currentVersion: '0.0.0'
+})
 const loginForm = reactive({
   phone: '',
   password: ''
@@ -96,6 +114,14 @@ const profileForm = reactive({
 
 let searchTimer: ReturnType<typeof setTimeout> | null = null
 let messageTimer: ReturnType<typeof setInterval> | null = null
+
+function readSidebarCollapsed() {
+  try {
+    return localStorage.getItem('brmtool:sidebar-collapsed') === '1'
+  } catch {
+    return false
+  }
+}
 
 const categoryById = computed(
   () => new Map(categories.value.map((category) => [category.id, category]))
@@ -158,10 +184,12 @@ onMounted(async () => {
   await restoreSession()
   await loadHome()
   startMessagePolling()
+  void bindUpdateStatus()
 })
 
 onUnmounted(() => {
   if (messageTimer) clearInterval(messageTimer)
+  offUpdateStatus()
 })
 
 watch([activeCategory, keyword, activeTab], () => {
@@ -169,6 +197,12 @@ watch([activeCategory, keyword, activeTab], () => {
   searchTimer = setTimeout(() => {
     void loadToolList()
   }, 260)
+})
+
+watch(sidebarCollapsed, (value) => {
+  try {
+    localStorage.setItem('brmtool:sidebar-collapsed', value ? '1' : '0')
+  } catch {}
 })
 
 async function loadHome() {
@@ -265,14 +299,18 @@ async function openTool(id: number) {
   activeTool.value = null
   recordLocalUsage(tool)
 
-  if (tool.type === 'external_link' || tool.openMode === 'external_browser') {
+  if (tool.type === 'external_link' && tool.openMode === 'external_browser') {
     const result = await window.api.openExternalTool(tool.entry)
     syncStatus.value = result.success ? `已打开 ${tool.name}` : result.error || '外链打开失败'
+  } else if (tool.type === 'external_link' && tool.openMode === 'embedded_webview') {
+    activeTool.value = tool
+    syncStatus.value = `正在桌面端浏览 ${tool.name}`
   } else if (tool.type === 'internal_web' && tool.openMode === 'internal_route') {
     activeTool.value = tool
     syncStatus.value = `正在使用 ${tool.name}`
   } else if (tool.type === 'local_plugin') {
-    syncStatus.value = '本地插件能力已预留，当前阶段暂不执行'
+    activeTool.value = tool
+    syncStatus.value = `正在运行本地插件 ${tool.name}`
   } else {
     syncStatus.value = '当前打开方式需要后续安全评估'
   }
@@ -480,23 +518,90 @@ async function submitProfile() {
     isSavingProfile.value = false
   }
 }
+
+async function bindUpdateStatus() {
+  onUpdateStatus((status) => {
+    updateStatus.value = status
+
+    if (['available', 'downloading', 'downloaded', 'error'].includes(status.phase)) {
+      showUpdateDialog.value = true
+    }
+  })
+
+  try {
+    const status = await getUpdateStatus()
+    if (status) {
+      updateStatus.value = status
+    }
+  } catch {}
+}
+
+async function openUpdateDialog(manual = true) {
+  showAccountMenu.value = false
+  showUpdateDialog.value = true
+  updateError.value = ''
+
+  if (!manual) {
+    return
+  }
+
+  isCheckingUpdate.value = true
+  try {
+    const status = await checkForUpdates()
+    if (status) {
+      updateStatus.value = status
+    }
+  } catch (error) {
+    updateError.value = (error as Error).message || '检查更新失败'
+  } finally {
+    isCheckingUpdate.value = false
+  }
+}
+
+async function restartAndInstallUpdate() {
+  isInstallingUpdate.value = true
+  updateError.value = ''
+
+  try {
+    await installUpdate()
+  } catch (error) {
+    updateError.value = (error as Error).message || '安装更新失败'
+    isInstallingUpdate.value = false
+  }
+}
+
+function formatUpdateSize(value?: number) {
+  if (!value) return '--'
+  if (value < 1024 * 1024) return `${Math.round(value / 1024)} KB`
+  return `${(value / 1024 / 1024).toFixed(1)} MB`
+}
 </script>
 
 <template>
-  <div class="toolbox-shell">
-    <aside class="sidebar">
+  <div class="toolbox-shell" :class="{ 'is-sidebar-collapsed': sidebarCollapsed }">
+    <aside class="sidebar" :class="{ collapsed: sidebarCollapsed }">
       <div class="brand">
         <img :src="logoUrl" alt="" />
         <strong>数智工具箱</strong>
+        <button
+          class="sidebar-toggle"
+          type="button"
+          :title="sidebarCollapsed ? '展开侧边栏' : '折叠侧边栏'"
+          @click="sidebarCollapsed = !sidebarCollapsed"
+        >
+          {{ sidebarCollapsed ? '›' : '‹' }}
+        </button>
       </div>
 
       <SidebarNav
         v-model="activeCategory"
         :items="navItems"
+        :collapsed="sidebarCollapsed"
         @update:model-value="activeTool = null"
       />
 
       <MetricPanel
+        v-if="!sidebarCollapsed"
         title="今日使用"
         :value="usageStats.todayCount"
         :label="`累计 ${usageStats.totalCount} 次`"
@@ -504,7 +609,7 @@ async function submitProfile() {
       />
     </aside>
 
-    <main class="workspace">
+    <main class="workspace" :class="{ 'is-running': activeTool }">
       <header class="topbar">
         <label class="search">
           <span>⌕</span>
@@ -518,6 +623,19 @@ async function submitProfile() {
         </label>
 
         <div class="top-actions">
+          <button
+            class="update-btn"
+            type="button"
+            title="检查更新"
+            @click="openUpdateDialog(true)"
+          >
+            更新
+            <span
+              v-if="['available', 'downloading', 'downloaded'].includes(updateStatus.phase)"
+              class="update-pulse"
+            />
+          </button>
+
           <button class="notice-btn" type="button" title="消息通知" @click="toggleMessages">
             通知
             <span v-if="unreadCount" class="notice-dot">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
@@ -538,6 +656,7 @@ async function submitProfile() {
             <div v-if="showAccountMenu" class="account-menu">
               <strong>{{ profileName }}</strong>
               <small>{{ currentUser?.phone || '已登录' }}</small>
+              <button type="button" class="account-primary" @click="openUpdateDialog(true)">检查更新</button>
               <button type="button" class="account-primary" @click="openProfile">个人详情</button>
               <button type="button" @click="logout()">退出登录</button>
             </div>
@@ -567,7 +686,13 @@ async function submitProfile() {
         <p v-else class="empty-inline">暂无消息。</p>
       </aside>
 
-      <InternalToolRunner v-if="activeTool" :tool="activeTool" @back="activeTool = null" />
+      <div v-if="activeTool" class="runner-stage">
+        <InternalToolRunner
+          class="tool-runner-view"
+          :tool="activeTool"
+          @back="activeTool = null"
+        />
+      </div>
 
       <template v-else>
         <section v-if="showHomeBanner" class="hero">
@@ -762,11 +887,68 @@ async function submitProfile() {
         </div>
       </form>
     </div>
+
+    <div v-if="showUpdateDialog" class="modal-mask" @click.self="showUpdateDialog = false">
+      <article class="dialog-panel update-panel">
+        <div class="dialog-head">
+          <div>
+            <span class="dialog-kicker">桌面端更新</span>
+            <h2>{{ updateStatus.message }}</h2>
+          </div>
+          <button type="button" title="关闭" @click="showUpdateDialog = false">×</button>
+        </div>
+
+        <div class="update-grid">
+          <div>
+            <span>当前版本</span>
+            <strong>{{ updateStatus.currentVersion }}</strong>
+          </div>
+          <div>
+            <span>最新版本</span>
+            <strong>{{ updateStatus.latestVersion || '--' }}</strong>
+          </div>
+          <div>
+            <span>状态</span>
+            <strong>{{ updateStatus.phase }}</strong>
+          </div>
+        </div>
+
+        <div class="update-progress">
+          <div>
+            <span :style="{ width: `${Math.min(100, Math.max(0, updateStatus.percent || 0))}%` }" />
+          </div>
+          <small>
+            {{ Math.floor(updateStatus.percent || 0) }}%
+            · {{ formatUpdateSize(updateStatus.transferred) }} / {{ formatUpdateSize(updateStatus.total) }}
+          </small>
+        </div>
+
+        <p v-if="updateStatus.error || updateError" class="login-error">
+          {{ updateError || updateStatus.error }}
+        </p>
+
+        <div class="dialog-actions">
+          <button type="button" @click="showUpdateDialog = false">稍后</button>
+          <button type="button" :disabled="isCheckingUpdate" @click="openUpdateDialog(true)">
+            {{ isCheckingUpdate ? '检查中' : '重新检查' }}
+          </button>
+          <button
+            v-if="updateStatus.phase === 'downloaded'"
+            type="button"
+            :disabled="isInstallingUpdate"
+            @click="restartAndInstallUpdate"
+          >
+            {{ isInstallingUpdate ? '正在重启' : '立即重启安装' }}
+          </button>
+        </div>
+      </article>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .toolbox-shell {
+  box-sizing: border-box;
   width: 100%;
   height: 100%;
   display: grid;
@@ -783,9 +965,15 @@ async function submitProfile() {
     auto;
   color: #dceeff;
   overflow: hidden;
+  transition: grid-template-columns 0.18s ease;
+}
+
+.toolbox-shell.is-sidebar-collapsed {
+  grid-template-columns: 76px minmax(0, 1fr);
 }
 
 .sidebar {
+  box-sizing: border-box;
   min-width: 0;
   display: grid;
   grid-template-rows: auto 1fr auto;
@@ -794,13 +982,32 @@ async function submitProfile() {
   border-right: 1px solid rgba(70, 130, 185, 0.3);
   background: rgba(4, 17, 35, 0.62);
   backdrop-filter: blur(16px);
+  overflow: hidden;
+  transition:
+    padding 0.18s ease,
+    gap 0.18s ease;
+}
+
+.sidebar.collapsed {
+  gap: 12px;
+  padding: 16px 8px;
 }
 
 .brand {
-  display: flex;
+  box-sizing: border-box;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 30px;
   align-items: center;
-  gap: 12px;
-  padding: 0 10px 6px;
+  gap: 10px;
+  padding: 0 4px 6px;
+}
+
+.sidebar.collapsed .brand {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  gap: 8px;
+  padding: 0 0 4px;
 }
 
 .brand img {
@@ -810,13 +1017,36 @@ async function submitProfile() {
 }
 
 .brand strong {
+  min-width: 0;
+  overflow: hidden;
   color: #f1f8ff;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 780;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
+.sidebar.collapsed .brand strong {
+  display: none;
+}
+
+.sidebar-toggle {
+  box-sizing: border-box;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(91, 172, 235, 0.3);
+  border-radius: 8px;
+  background: rgba(6, 29, 61, 0.66);
+  color: #8fdfff;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
 .workspace {
+  box-sizing: border-box;
   position: relative;
   min-width: 0;
   height: 100%;
@@ -826,6 +1056,24 @@ async function submitProfile() {
   gap: 10px;
   padding: clamp(16px, 1.6vw, 22px);
   overflow: auto;
+}
+
+.workspace.is-running {
+  grid-template-rows: auto minmax(0, 1fr);
+  align-content: stretch;
+  overflow: hidden;
+}
+
+.runner-stage {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tool-runner-view {
+  height: 100%;
+  min-height: 0;
 }
 
 .topbar {
@@ -873,6 +1121,7 @@ async function submitProfile() {
 .tabs button,
 .profile,
 .notice-btn,
+.update-btn,
 .account-menu button,
 .drawer-head button,
 .login-actions button,
@@ -897,6 +1146,26 @@ async function submitProfile() {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.update-btn {
+  position: relative;
+  height: 38px;
+  min-width: 60px;
+  padding: 0 12px;
+  color: #d7efff;
+  font-size: 13px;
+}
+
+.update-pulse {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #36ffd4;
+  box-shadow: 0 0 14px rgba(54, 255, 212, 0.72);
 }
 
 .notice-btn {
@@ -1271,6 +1540,66 @@ async function submitProfile() {
 .profile-status {
   color: #7affd8;
   font-size: 13px;
+}
+
+.update-panel {
+  width: min(560px, 100%);
+}
+
+.update-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.update-grid div {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+  border: 1px solid rgba(91, 172, 235, 0.22);
+  border-radius: 8px;
+  background: rgba(4, 19, 42, 0.58);
+}
+
+.update-grid span {
+  color: #8fa7cc;
+  font-size: 12px;
+}
+
+.update-grid strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #eef8ff;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.update-progress {
+  display: grid;
+  gap: 8px;
+}
+
+.update-progress div {
+  height: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(57, 191, 255, 0.3);
+  border-radius: 999px;
+  background: rgba(4, 19, 42, 0.74);
+}
+
+.update-progress span {
+  height: 100%;
+  display: block;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #1dd7ff, #36ffd4);
+  box-shadow: 0 0 18px rgba(35, 214, 255, 0.42);
+  transition: width 180ms ease;
+}
+
+.update-progress small {
+  color: #8fa7cc;
+  font-size: 12px;
 }
 
 .dialog-actions {
@@ -1671,6 +2000,10 @@ button:hover {
   }
 
   .profile-editor {
+    grid-template-columns: 1fr;
+  }
+
+  .update-grid {
     grid-template-columns: 1fr;
   }
 }

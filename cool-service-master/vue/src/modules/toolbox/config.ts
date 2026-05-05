@@ -2,6 +2,9 @@ import { type ModuleConfig } from '/@/cool';
 
 export default (): ModuleConfig => {
 	return {
+		ignore: {
+			token: ['/download']
+		},
 		views: [
 			{
 				meta: {
@@ -23,6 +26,23 @@ export default (): ModuleConfig => {
 				},
 				path: '/toolbox/usage',
 				component: () => import('./views/usage.vue')
+			},
+			{
+				meta: {
+					label: '使用建议'
+				},
+				path: '/toolbox/feedback',
+				component: () => import('./views/feedback.vue')
+			}
+		],
+		pages: [
+			{
+				path: '/download',
+				meta: {
+					label: '桌面端下载',
+					process: false
+				},
+				component: () => import('./pages/download.vue')
 			}
 		]
 	};

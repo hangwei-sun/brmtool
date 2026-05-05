@@ -1,4 +1,5 @@
 import { CoolController, BaseController } from '@cool-midway/core';
+import { Inject, Post } from '@midwayjs/core';
 import { ToolboxCategoryEntity } from '../../entity/category';
 import { ToolboxToolEntity } from '../../entity/tool';
 import { ToolboxToolService } from '../../service/tool';
@@ -42,4 +43,12 @@ import { ToolboxToolService } from '../../service/tool';
     },
   },
 })
-export class AdminToolboxToolController extends BaseController {}
+export class AdminToolboxToolController extends BaseController {
+  @Inject()
+  toolboxToolService: ToolboxToolService;
+
+  @Post('/ensureFeedbackTool', { summary: '启用留言板工具' })
+  async ensureFeedbackTool() {
+    return this.ok(await this.toolboxToolService.ensureFeedbackTool());
+  }
+}

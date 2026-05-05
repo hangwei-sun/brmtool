@@ -2,7 +2,8 @@ import { app, ipcMain, shell } from 'electron'
 import { readFileSync, writeFileSync, rmSync, existsSync } from 'fs'
 import { join } from 'path'
 
-const API_BASE = process.env.BRMTOOL_API_BASE || 'http://127.0.0.1:8001'
+const DEFAULT_DEV_API_BASE = 'http://127.0.0.1:8001'
+const DEFAULT_PROD_API_BASE = 'https://deploy-domain.example/api'
 const TIMEOUT_MS = 8000
 const ALLOWED_METHODS = new Set(['GET', 'POST'])
 const APP_PATH_PREFIXES = ['/app/toolbox/', '/app/user/', '/app/message/']
@@ -37,6 +38,11 @@ function isAllowedAppPath(pathname: string) {
   return APP_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))
 }
 
+function apiBaseUrl() {
+  const value = process.env.BRMTOOL_API_BASE || (app.isPackaged ? DEFAULT_PROD_API_BASE : DEFAULT_DEV_API_BASE)
+  return new URL(value.endsWith('/') ? value : `${value}/`)
+}
+
 function normalizeAppApiUrl(path: string) {
   if (!path || typeof path !== 'string') {
     throw new Error('请求路径不能为空')
@@ -50,10 +56,16 @@ function normalizeAppApiUrl(path: string) {
     throw new Error('请求路径不在应用白名单内')
   }
 
-  const baseUrl = new URL(API_BASE)
-  const targetUrl = new URL(path, baseUrl)
+  const pathUrl = new URL(path, 'http://brmtool.local')
+  const baseUrl = apiBaseUrl()
+  const basePath = baseUrl.pathname.replace(/\/$/, '')
+  const targetUrl = new URL(baseUrl.toString())
 
-  if (targetUrl.origin !== baseUrl.origin || !isAllowedAppPath(targetUrl.pathname)) {
+  targetUrl.pathname = `${basePath}${pathUrl.pathname}`
+  targetUrl.search = pathUrl.search
+  targetUrl.hash = ''
+
+  if (targetUrl.origin !== baseUrl.origin || !isAllowedAppPath(pathUrl.pathname)) {
     throw new Error('请求路径不在应用白名单内')
   }
 

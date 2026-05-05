@@ -1,10 +1,10 @@
 {
   "name": "electron-app",
   "version": "1.0.0",
-  "description": "An Electron application with Vue and TypeScript",
+  "description": "数智工具箱桌面端",
   "main": "./out/main/index.js",
-  "author": "example.com",
-  "homepage": "https://electron-vite.org",
+  "author": "BRMTool",
+  "homepage": "https://deploy-domain.example",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts,.vue --fix",
@@ -23,6 +23,8 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.0",
     "@electron-toolkit/utils": "^3.0.0",
+    "electron-log": "^5.4.3",
+    "electron-updater": "^6.8.3",
     "naive-ui": "2.43.2"
   },
   "devDependencies": {

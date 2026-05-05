@@ -7,6 +7,7 @@ import { registerFileHandlers } from './file'
 import { registerNotificationHandlers } from './notification'
 import { registerRequestHandlers } from './request'
 import { registerToolboxHandlers } from './toolbox'
+import { registerUpdaterHandlers } from './updater'
 
 // 主窗口实例，通过 getter 传给各模块，避免循环依赖
 let mainWindow: BrowserWindow | null = null
@@ -22,6 +23,7 @@ function createWindow(): void {
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
+      webviewTag: true,
       sandbox: false
     }
   })
@@ -59,6 +61,7 @@ app.whenReady().then(() => {
   registerNotificationHandlers()
   registerRequestHandlers()
   registerToolboxHandlers()
+  registerUpdaterHandlers(() => mainWindow)
 
   createWindow()
 

@@ -25,6 +25,9 @@ defineProps<{
 
 <style scoped>
 .metric-panel {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
   min-height: 126px;
   display: grid;
   grid-template-columns: 84px 1fr;
@@ -37,6 +40,7 @@ defineProps<{
     linear-gradient(145deg, rgba(7, 42, 82, 0.92), rgba(4, 21, 44, 0.86)),
     rgba(5, 20, 43, 0.9);
   box-shadow: inset 0 0 28px rgba(0, 148, 255, 0.12);
+  overflow: hidden;
 }
 
 .radar {
@@ -94,6 +98,7 @@ defineProps<{
   margin-top: 5px;
   color: #8fa6c9;
   font-size: 12px;
+  line-height: 1.45;
 }
 
 .metric-copy em {

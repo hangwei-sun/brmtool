@@ -9,6 +9,7 @@ export interface ToolboxNavItem {
 defineProps<{
   items: ToolboxNavItem[]
   modelValue: string
+  collapsed?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -17,13 +18,14 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <nav class="sidebar-nav" aria-label="工具分类">
+  <nav class="sidebar-nav" :class="{ collapsed }" aria-label="工具分类">
     <button
       v-for="item in items"
       :key="item.code"
       class="nav-item"
       :class="{ active: modelValue === item.code }"
       type="button"
+      :title="collapsed ? item.name : undefined"
       @click="emit('update:modelValue', item.code)"
     >
       <span class="nav-icon">{{ item.icon }}</span>
@@ -35,13 +37,18 @@ const emit = defineEmits<{
 
 <style scoped>
 .sidebar-nav {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
   display: grid;
   align-content: start;
   gap: 6px;
   min-height: 0;
+  overflow: hidden;
 }
 
 .nav-item {
+  box-sizing: border-box;
   width: 100%;
   min-height: 42px;
   display: grid;
@@ -110,6 +117,25 @@ const emit = defineEmits<{
   font-size: 12px;
   font-weight: 700;
   text-align: center;
+}
+
+@media (max-width: 900px) {
+  .sidebar-nav,
+  .sidebar-nav.collapsed {
+    align-content: start;
+  }
+}
+
+.sidebar-nav.collapsed .nav-item {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  min-height: 44px;
+  padding: 6px;
+}
+
+.sidebar-nav.collapsed .nav-name,
+.sidebar-nav.collapsed .nav-count {
+  display: none;
 }
 
 @media (max-width: 900px) {

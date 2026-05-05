@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { ToolboxTool } from '../../services/toolbox'
+import ExternalWebRunner from './ExternalWebRunner.vue'
 import Base64Tool from './tools/Base64Tool.vue'
+import FeedbackBoardTool from './tools/FeedbackBoardTool.vue'
 import JsonTool from './tools/JsonTool.vue'
 import MarkdownTool from './tools/MarkdownTool.vue'
 import TextDedupeTool from './tools/TextDedupeTool.vue'
@@ -21,12 +23,19 @@ const toolComponents = {
   'url-codec': UrlTool,
   'text-dedupe': TextDedupeTool,
   'markdown-preview': MarkdownTool,
-  'timestamp-convert': TimestampTool
+  'timestamp-convert': TimestampTool,
+  'feedback-board': FeedbackBoardTool
 }
 </script>
 
 <template>
-  <section class="runner-shell">
+  <ExternalWebRunner
+    v-if="tool.type === 'external_link' && tool.openMode === 'embedded_webview'"
+    :tool="tool"
+    @close="emit('back')"
+  />
+
+  <section v-else class="runner-shell">
     <header class="runner-head">
       <button type="button" title="返回首页" @click="emit('back')">‹</button>
       <span class="runner-icon">{{ tool.icon }}</span>
@@ -36,7 +45,10 @@ const toolComponents = {
       </div>
     </header>
 
-    <component :is="toolComponents[tool.code as keyof typeof toolComponents]" v-if="tool.code in toolComponents" />
+    <component
+      :is="toolComponents[tool.code as keyof typeof toolComponents]"
+      v-if="tool.code in toolComponents"
+    />
 
     <div v-else class="unsupported">
       <strong>这个内置工具还没有实现</strong>
@@ -47,10 +59,12 @@ const toolComponents = {
 
 <style scoped>
 .runner-shell {
-  min-height: 100%;
+  height: 100%;
+  min-height: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 14px;
+  overflow: auto;
 }
 
 .runner-head {

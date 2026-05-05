@@ -1,8 +1,10 @@
 import { proxy } from './proxy';
 
+const publicOrigin = import.meta.env.VITE_PUBLIC_ORIGIN || location.origin;
+
 export default {
 	// 根地址
-	host: proxy['/prod/'].target,
+	host: publicOrigin || proxy['/prod/'].target,
 
 	// 请求地址
 	get baseUrl() {

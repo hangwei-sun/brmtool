@@ -34,6 +34,16 @@ export interface ToolboxUsageStats {
   totalCount: number
 }
 
+export interface ToolboxFeedback {
+  id: number
+  title: string
+  content: string
+  contact?: string
+  status: number
+  reply?: string
+  createTime?: string
+}
+
 export interface ToolboxHomeData {
   categories: ToolboxCategory[]
   recommendTools: ToolboxTool[]
@@ -168,10 +178,26 @@ export const defaultTools: ToolboxTool[] = [
     icon: 'DOC',
     type: 'external_link',
     entry: 'https://node.cool-admin.com/src/introduce/',
-    openMode: 'external_browser',
+    openMode: 'embedded_webview',
     tags: ['文档', 'COOL'],
     keywords: 'cool admin docs 文档',
     isNew: 1
+  },
+  {
+    id: 1008,
+    categoryId: 102,
+    name: '留言板',
+    code: 'feedback-board',
+    description: '登录用户提交工具箱使用建议，管理员后台可查看处理。',
+    icon: 'MSG',
+    type: 'local_plugin',
+    entry: 'feedback-board',
+    openMode: 'internal_route',
+    tags: ['建议', '反馈'],
+    keywords: 'feedback liuyan jianyi 留言 建议 反馈',
+    isRecommend: 1,
+    isNew: 1,
+    authRequired: 1
   }
 ]
 
@@ -261,6 +287,14 @@ export async function recordUsageRemote(toolId: number) {
   })
 }
 
+export async function fetchMyFeedback() {
+  return await toolboxRequest<ToolboxFeedback[]>('/app/toolbox/feedback/mine')
+}
+
+export async function submitFeedback(data: { title: string; content: string; contact?: string }) {
+  return await toolboxRequest<{ id: number }>('/app/toolbox/feedback/submit', 'POST', data)
+}
+
 async function toolboxRequest<T>(path: string, method: 'GET' | 'POST' = 'GET', data?: unknown) {
   const request = typeof window.api.appRequest === 'function' ? window.api.appRequest : window.api.toolboxRequest
   if (typeof request !== 'function') {
@@ -346,7 +380,8 @@ function normalizeIcon(icon: string, code: string) {
     'file-text': 'TXT',
     markdown: 'MD',
     clock: 'CLK',
-    'book-open': 'DOC'
+    'book-open': 'DOC',
+    message: 'MSG'
   }
   return map[icon] || map[code] || icon || 'APP'
 }

@@ -23,7 +23,7 @@ export function cool(options: Config.Options) {
 
 		if (config.clean) {
 			// 默认设置为测试地址
-			config.reqUrl = "https://show.cool-admin.com/api";
+			config.reqUrl = "https://deploy-domain.example/api";
 		}
 	}
 

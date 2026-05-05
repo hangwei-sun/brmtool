@@ -176,7 +176,7 @@
       "icon": "book-open",
       "type": "external_link",
       "entry": "https://node.cool-admin.com/src/introduce/",
-      "openMode": "external_browser",
+      "openMode": "embedded_webview",
       "tags": ["文档", "COOL"],
       "keywords": "cool admin docs wen档 文档",
       "isRecommend": 0,
@@ -186,6 +186,29 @@
       "status": 1,
       "version": "1.0.0",
       "config": {}
+    },
+    {
+      "id": 1008,
+      "categoryId": 102,
+      "name": "留言板",
+      "code": "feedback-board",
+      "description": "登录用户提交工具箱使用建议，管理员后台可查看处理。",
+      "icon": "MSG",
+      "type": "local_plugin",
+      "entry": "feedback-board",
+      "openMode": "internal_route",
+      "tags": ["建议", "反馈"],
+      "keywords": "feedback liuyan jianyi 留言 建议 反馈",
+      "isRecommend": 1,
+      "isHot": 0,
+      "isNew": 1,
+      "authRequired": 1,
+      "sort": 70,
+      "status": 1,
+      "version": "1.0.0",
+      "config": {
+        "plugin": "feedback-board"
+      }
     }
   ]
 }

@@ -1008,6 +1008,68 @@ declare namespace Eps {
 		[key: string]: any;
 	}
 
+	interface ToolboxFeedbackEntity {
+		/**
+		 * ID
+		 */
+		id?: number;
+
+		/**
+		 * 用户ID
+		 */
+		userId?: number;
+
+		/**
+		 * 用户昵称
+		 */
+		userName?: string;
+
+		/**
+		 * 手机号
+		 */
+		phone?: string;
+
+		/**
+		 * 标题
+		 */
+		title?: string;
+
+		/**
+		 * 内容
+		 */
+		content?: string;
+
+		/**
+		 * 联系方式
+		 */
+		contact?: string;
+
+		/**
+		 * 状态 0-待处理 1-已处理
+		 */
+		status?: number;
+
+		/**
+		 * 处理备注
+		 */
+		reply?: string;
+
+		/**
+		 * 创建时间
+		 */
+		createTime?: string;
+
+		/**
+		 * 更新时间
+		 */
+		updateTime?: string;
+
+		/**
+		 * 任意键值
+		 */
+		[key: string]: any;
+	}
+
 	interface ToolboxToolEntity {
 		/**
 		 * ID
@@ -1399,6 +1461,11 @@ declare namespace Eps {
 	interface ToolboxCategoryPageResponse {
 		pagination: PagePagination;
 		list: ToolboxCategoryEntity[];
+	}
+
+	interface ToolboxFeedbackPageResponse {
+		pagination: PagePagination;
+		list: ToolboxFeedbackEntity[];
 	}
 
 	interface ToolboxToolPageResponse {
@@ -2558,7 +2625,57 @@ declare namespace Eps {
 		request: Request;
 	}
 
+	interface ToolboxFeedback {
+		/**
+		 * 删除
+		 */
+		delete(data?: any): Promise<any>;
+
+		/**
+		 * 修改
+		 */
+		update(data?: any): Promise<any>;
+
+		/**
+		 * 单个信息
+		 */
+		info(data?: any): Promise<ToolboxFeedbackEntity>;
+
+		/**
+		 * 列表查询
+		 */
+		list(data?: any): Promise<ToolboxFeedbackEntity[]>;
+
+		/**
+		 * 分页查询
+		 */
+		page(data?: any): Promise<ToolboxFeedbackPageResponse>;
+
+		/**
+		 * 权限标识
+		 */
+		permission: { delete: string; update: string; info: string; list: string; page: string };
+
+		/**
+		 * 权限状态
+		 */
+		_permission: {
+			delete: boolean;
+			update: boolean;
+			info: boolean;
+			list: boolean;
+			page: boolean;
+		};
+
+		request: Request;
+	}
+
 	interface ToolboxTool {
+		/**
+		 * 启用留言板工具
+		 */
+		ensureFeedbackTool(data?: any): Promise<any>;
+
 		/**
 		 * 删除
 		 */
@@ -2593,6 +2710,7 @@ declare namespace Eps {
 		 * 权限标识
 		 */
 		permission: {
+			ensureFeedbackTool: string;
 			delete: string;
 			update: string;
 			info: string;
@@ -2605,6 +2723,7 @@ declare namespace Eps {
 		 * 权限状态
 		 */
 		_permission: {
+			ensureFeedbackTool: boolean;
 			delete: boolean;
 			update: boolean;
 			info: boolean;
@@ -2827,7 +2946,12 @@ declare namespace Eps {
 		recycle: { data: RecycleData };
 		space: { info: SpaceInfo; type: SpaceType };
 		task: { info: TaskInfo };
-		toolbox: { category: ToolboxCategory; tool: ToolboxTool; usage: ToolboxUsage };
+		toolbox: {
+			category: ToolboxCategory;
+			feedback: ToolboxFeedback;
+			tool: ToolboxTool;
+			usage: ToolboxUsage;
+		};
 		user: { address: UserAddress; info: UserInfo };
 	};
 }

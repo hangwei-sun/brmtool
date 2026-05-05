@@ -185,12 +185,18 @@ const emit = defineEmits<{
   right: 12px;
   width: 28px;
   height: 28px;
+  display: grid;
+  place-items: center;
   border: 1px solid rgba(144, 169, 210, 0.48);
   border-radius: 8px;
+  padding: 0;
   background: rgba(4, 18, 38, 0.72);
   color: #91a6cb;
-  font-size: 18px;
-  line-height: 1;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 28px;
+  text-align: center;
   cursor: pointer;
 }
 
@@ -219,6 +225,15 @@ const emit = defineEmits<{
 .compact .tool-copy small,
 .compact .tags {
   display: none;
+}
+
+.compact .favorite {
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  font-size: 17px;
+  line-height: 26px;
 }
 
 @media (max-width: 980px) {
