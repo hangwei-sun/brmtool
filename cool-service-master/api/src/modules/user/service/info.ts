@@ -76,18 +76,29 @@ export class UserInfoService extends BaseService {
   async updatePerson(id, param) {
     const info = await this.person(id);
     if (!info) throw new CoolCommException('用户不存在');
+    const next = {
+      nickName: param.nickName,
+      avatarUrl: param.avatarUrl,
+      gender: param.gender,
+      description: param.description,
+    };
+    Object.keys(next).forEach(key => {
+      if (next[key] === undefined) {
+        delete next[key];
+      }
+    });
     try {
       // 修改了头像要重新处理
-      if (param.avatarUrl && info.avatarUrl != param.avatarUrl) {
+      if (next.avatarUrl && info.avatarUrl != next.avatarUrl) {
         const file = await this.pluginService.getInstance('upload');
-        param.avatarUrl = await file.downAndUpload(
-          param.avatarUrl,
+        next.avatarUrl = await file.downAndUpload(
+          next.avatarUrl,
           uuid() + '.png'
         );
       }
     } catch (err) {}
     try {
-      return await this.userInfoEntity.update({ id }, param);
+      return await this.userInfoEntity.update({ id }, next);
     } catch (err) {
       throw new CoolCommException('更新失败，参数错误或者手机号已存在');
     }
@@ -106,6 +117,31 @@ export class UserInfoService extends BaseService {
       throw new CoolCommException('验证码错误');
     }
     await this.userInfoEntity.update(user.id, { password: md5(password) });
+  }
+
+  /**
+   * 通过旧密码更新密码，供桌面端账号中心使用
+   * @param userId
+   * @param oldPassword
+   * @param newPassword
+   */
+  async updatePasswordByOld(userId, oldPassword, newPassword) {
+    if (!oldPassword || !newPassword) {
+      throw new CoolCommException('请输入旧密码和新密码');
+    }
+    if (String(newPassword).length < 6) {
+      throw new CoolCommException('新密码至少 6 位');
+    }
+
+    const user = await this.userInfoEntity.findOneBy({ id: userId });
+    if (!user) {
+      throw new CoolCommException('用户不存在');
+    }
+    if (!user.password || user.password !== md5(oldPassword)) {
+      throw new CoolCommException('旧密码错误');
+    }
+
+    await this.userInfoEntity.update(user.id, { password: md5(newPassword) });
   }
 
   /**

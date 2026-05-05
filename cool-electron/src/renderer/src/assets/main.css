@@ -1,3 +1,5 @@
+@import './base.css';
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -14,6 +16,7 @@ body {
   overflow: hidden;
   user-select: none;
   -webkit-user-select: none;
+  background: #051325;
 }
 
 #app {

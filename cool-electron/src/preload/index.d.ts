@@ -51,6 +51,29 @@ export interface FetchResult {
   error?: string
 }
 
+export interface ToolboxRequestPayload {
+  path: string
+  method?: 'GET' | 'POST'
+  data?: unknown
+  token?: string
+}
+
+export interface ToolboxRequestResult {
+  success: boolean
+  status?: number
+  elapsed?: number
+  data?: unknown
+  error?: string
+}
+
+export interface AuthSession {
+  token?: string
+  refreshToken?: string
+  expire?: number
+  refreshExpire?: number
+  user?: unknown
+}
+
 /** 暴露给 Renderer 的完整 IPC API 类型定义 */
 export interface IpcApi {
   // IPC 通信模块
@@ -66,6 +89,14 @@ export interface IpcApi {
   sendNotification: (title: string, body: string) => Promise<NotificationResult>
   // HTTP 请求模块
   fetchUrl: (url: string, method?: string) => Promise<FetchResult>
+  // APP 后端模块
+  appRequest: (payload: ToolboxRequestPayload) => Promise<ToolboxRequestResult>
+  getAuthSession: () => Promise<AuthSession>
+  setAuthSession: (session: AuthSession) => Promise<NotificationResult>
+  clearAuthSession: () => Promise<NotificationResult>
+  // 工具箱模块
+  toolboxRequest: (payload: ToolboxRequestPayload) => Promise<ToolboxRequestResult>
+  openExternalTool: (url: string) => Promise<NotificationResult>
 }
 
 declare global {

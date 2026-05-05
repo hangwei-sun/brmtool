@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import Demo from './view/demo.vue'
+import Toolbox from './view/toolbox.vue'
 </script>
 
 <template>
-  <Demo />
+  <Toolbox />
 </template>

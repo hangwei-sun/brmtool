@@ -1,0 +1,162 @@
+[
+  {
+    "name": "数智工具箱",
+    "router": "/toolbox",
+    "perms": null,
+    "type": 0,
+    "icon": "icon-app",
+    "orderNum": 1,
+    "viewPath": null,
+    "keepAlive": true,
+    "isShow": true,
+    "childMenus": [
+      {
+        "name": "工具分类",
+        "router": "/toolbox/category",
+        "perms": null,
+        "type": 1,
+        "icon": "icon-menu",
+        "orderNum": 1,
+        "viewPath": "modules/toolbox/views/category.vue",
+        "keepAlive": true,
+        "isShow": true,
+        "childMenus": [
+          {
+            "name": "新增",
+            "router": null,
+            "perms": "toolbox:category:add",
+            "type": 2,
+            "icon": null,
+            "orderNum": 1,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          },
+          {
+            "name": "删除",
+            "router": null,
+            "perms": "toolbox:category:delete",
+            "type": 2,
+            "icon": null,
+            "orderNum": 2,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          },
+          {
+            "name": "修改",
+            "router": null,
+            "perms": "toolbox:category:update",
+            "type": 2,
+            "icon": null,
+            "orderNum": 3,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          },
+          {
+            "name": "查询",
+            "router": null,
+            "perms": "toolbox:category:page,toolbox:category:list,toolbox:category:info",
+            "type": 2,
+            "icon": null,
+            "orderNum": 4,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          }
+        ]
+      },
+      {
+        "name": "工具管理",
+        "router": "/toolbox/tool",
+        "perms": null,
+        "type": 1,
+        "icon": "icon-goods",
+        "orderNum": 2,
+        "viewPath": "modules/toolbox/views/tool.vue",
+        "keepAlive": true,
+        "isShow": true,
+        "childMenus": [
+          {
+            "name": "新增",
+            "router": null,
+            "perms": "toolbox:tool:add",
+            "type": 2,
+            "icon": null,
+            "orderNum": 1,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          },
+          {
+            "name": "删除",
+            "router": null,
+            "perms": "toolbox:tool:delete",
+            "type": 2,
+            "icon": null,
+            "orderNum": 2,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          },
+          {
+            "name": "修改",
+            "router": null,
+            "perms": "toolbox:tool:update",
+            "type": 2,
+            "icon": null,
+            "orderNum": 3,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          },
+          {
+            "name": "查询",
+            "router": null,
+            "perms": "toolbox:tool:page,toolbox:tool:list,toolbox:tool:info",
+            "type": 2,
+            "icon": null,
+            "orderNum": 4,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          }
+        ]
+      },
+      {
+        "name": "使用统计",
+        "router": "/toolbox/usage",
+        "perms": null,
+        "type": 1,
+        "icon": "icon-log",
+        "orderNum": 3,
+        "viewPath": "modules/toolbox/views/usage.vue",
+        "keepAlive": true,
+        "isShow": true,
+        "childMenus": [
+          {
+            "name": "查询",
+            "router": null,
+            "perms": "toolbox:usage:page,toolbox:usage:list,toolbox:usage:info,toolbox:usage:stats",
+            "type": 2,
+            "icon": null,
+            "orderNum": 1,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          }
+        ]
+      }
+    ]
+  }
+]

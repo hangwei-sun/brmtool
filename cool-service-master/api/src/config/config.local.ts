@@ -1,7 +1,47 @@
 import { CoolConfig } from '@cool-midway/core';
 import { MidwayConfig } from '@midwayjs/core';
+import * as fs from 'fs';
+import * as path from 'path';
 import { TenantSubscriber } from '../modules/base/db/tenant';
-import * as path from "path";
+
+function loadLocalEnv() {
+  const files = [
+    path.join(__dirname, '../../.env.local'),
+    path.join(__dirname, '../../../.env.local'),
+  ];
+
+  for (const file of files) {
+    if (!fs.existsSync(file)) {
+      continue;
+    }
+
+    const content = fs.readFileSync(file, 'utf8');
+    for (const line of content.split(/\r?\n/)) {
+      const text = line.trim();
+      if (!text || text.startsWith('#')) {
+        continue;
+      }
+
+      const index = text.indexOf('=');
+      if (index <= 0) {
+        continue;
+      }
+
+      const key = text.slice(0, index).trim();
+      const value = text
+        .slice(index + 1)
+        .trim()
+        .replace(/^['"]|['"]$/g, '');
+      if (!process.env[key]) {
+        process.env[key] = value;
+      }
+    }
+  }
+}
+
+loadLocalEnv();
+
+const dbPort = Number(process.env.BRMTOOL_DB_PORT || 3306);
 
 /**
  * 本地开发 npm run dev 读取的配置文件
@@ -10,16 +50,14 @@ export default {
   typeorm: {
     dataSource: {
       default: {
-        // sqlite数据库配置
-        type: 'sqlite',
-        database: path.join(__dirname, '../../cool.sqlite'),
-        // mysql数据库配置
-        // type: 'mysql',
-        // host: '127.0.0.1',
-        // port: 3306,
-        // username: 'root',
-        // password: '123456',
-        // database: 'cool',
+        // 本地开发统一使用本机 MySQL，不提交密码；通过环境变量注入
+        type: 'mysql',
+        host: process.env.BRMTOOL_DB_HOST || '127.0.0.1',
+        port: dbPort,
+        username: process.env.BRMTOOL_DB_USER || 'root',
+        password:
+          process.env.BRMTOOL_DB_PASSWORD || process.env.MYSQL_PWD || '',
+        database: process.env.BRMTOOL_DB_NAME || 'brmtool',
         // 自动建表 注意：线上部署的时候不要使用，有可能导致数据丢失
         synchronize: true,
         // 打印日志

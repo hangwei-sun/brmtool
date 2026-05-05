@@ -6,14 +6,17 @@ import { registerIpcHandlers } from './ipc'
 import { registerFileHandlers } from './file'
 import { registerNotificationHandlers } from './notification'
 import { registerRequestHandlers } from './request'
+import { registerToolboxHandlers } from './toolbox'
 
 // 主窗口实例，通过 getter 传给各模块，避免循环依赖
 let mainWindow: BrowserWindow | null = null
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
-    width: 900,
-    height: 920,
+    width: 1280,
+    height: 720,
+    minWidth: 1024,
+    minHeight: 640,
     show: false,
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
@@ -55,6 +58,7 @@ app.whenReady().then(() => {
   registerFileHandlers(() => mainWindow)
   registerNotificationHandlers()
   registerRequestHandlers()
+  registerToolboxHandlers()
 
   createWindow()
 

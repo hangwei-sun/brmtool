@@ -265,7 +265,7 @@ export class UserLoginService extends BaseService {
   async password(phone, password) {
     const user = await this.userInfoEntity.findOneBy({ phone });
 
-    if (user && user.password == md5(password)) {
+    if (user && user.status === 1 && user.password == md5(password)) {
       return this.token({
         id: user.id,
       });

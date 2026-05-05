@@ -4,6 +4,7 @@
 			<!-- 刷新按钮 -->
 			<cl-refresh-btn />
 			<!-- 删除按钮 -->
+			<cl-add-btn />
 			<cl-multi-delete-btn />
 			<cl-flex1 />
 
@@ -173,6 +174,19 @@ const Upsert = useUpsert({
 			}
 		},
 		{
+			prop: 'password',
+			label: t('密码'),
+			component: {
+				name: 'el-input',
+				props: {
+					type: 'password',
+					showPassword: true,
+					autocomplete: 'new-password',
+					placeholder: '新增或重置密码时填写'
+				}
+			}
+		},
+		{
 			prop: 'gender',
 			label: t('性别'),
 			value: 1,
@@ -190,7 +204,10 @@ const Upsert = useUpsert({
 				options: options.status
 			}
 		}
-	]
+	],
+	onOpened(data) {
+		data.password = '';
+	}
 });
 
 // cl-search

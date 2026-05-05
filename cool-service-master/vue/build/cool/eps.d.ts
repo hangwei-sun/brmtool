@@ -502,6 +502,115 @@ declare namespace Eps {
 		[key: string]: any;
 	}
 
+	interface MessageInfoEntity {
+		/**
+		 * ID
+		 */
+		id?: number;
+
+		/**
+		 * 标题
+		 */
+		title?: string;
+
+		/**
+		 * 内容
+		 */
+		content?: string;
+
+		/**
+		 * 等级 info/success/warning/error
+		 */
+		level?: string;
+
+		/**
+		 * 目标范围 all/user
+		 */
+		targetType?: string;
+
+		/**
+		 * 指定用户ID
+		 */
+		targetUserIds?: any;
+
+		/**
+		 * 跳转类型 none/tool/link
+		 */
+		actionType?: string;
+
+		/**
+		 * 跳转值
+		 */
+		actionValue?: string;
+
+		/**
+		 * 发布时间
+		 */
+		publishTime?: string;
+
+		/**
+		 * 排序
+		 */
+		sort?: number;
+
+		/**
+		 * 状态 0-草稿 1-发布 2-下线
+		 */
+		status?: number;
+
+		/**
+		 * 备注
+		 */
+		remark?: string;
+
+		/**
+		 * 创建时间
+		 */
+		createTime?: string;
+
+		/**
+		 * 更新时间
+		 */
+		updateTime?: string;
+
+		/**
+		 * 任意键值
+		 */
+		[key: string]: any;
+	}
+
+	interface MessageReadEntity {
+		/**
+		 * ID
+		 */
+		id?: number;
+
+		/**
+		 * 消息ID
+		 */
+		messageId?: number;
+
+		/**
+		 * 用户ID
+		 */
+		userId?: number;
+
+		/**
+		 * 创建时间
+		 */
+		createTime?: string;
+
+		/**
+		 * 更新时间
+		 */
+		updateTime?: string;
+
+		/**
+		 * 任意键值
+		 */
+		[key: string]: any;
+	}
+
 	interface PluginInfoEntity {
 		/**
 		 * ID
@@ -847,6 +956,227 @@ declare namespace Eps {
 		[key: string]: any;
 	}
 
+	interface ToolboxCategoryEntity {
+		/**
+		 * ID
+		 */
+		id?: number;
+
+		/**
+		 * 分类名称
+		 */
+		name?: string;
+
+		/**
+		 * 分类编码
+		 */
+		code?: string;
+
+		/**
+		 * 图标
+		 */
+		icon?: string;
+
+		/**
+		 * 排序
+		 */
+		sort?: number;
+
+		/**
+		 * 状态 0-禁用 1-启用
+		 */
+		status?: number;
+
+		/**
+		 * 备注
+		 */
+		remark?: string;
+
+		/**
+		 * 创建时间
+		 */
+		createTime?: string;
+
+		/**
+		 * 更新时间
+		 */
+		updateTime?: string;
+
+		/**
+		 * 任意键值
+		 */
+		[key: string]: any;
+	}
+
+	interface ToolboxToolEntity {
+		/**
+		 * ID
+		 */
+		id?: number;
+
+		/**
+		 * 分类ID
+		 */
+		categoryId?: number;
+
+		/**
+		 * 工具名称
+		 */
+		name?: string;
+
+		/**
+		 * 工具编码
+		 */
+		code?: string;
+
+		/**
+		 * 工具描述
+		 */
+		description?: string;
+
+		/**
+		 * 图标
+		 */
+		icon?: string;
+
+		/**
+		 * 工具类型 external_link/internal_web/local_plugin
+		 */
+		type?: string;
+
+		/**
+		 * 入口地址或内部路由
+		 */
+		entry?: string;
+
+		/**
+		 * 打开方式
+		 */
+		openMode?: string;
+
+		/**
+		 * 标签
+		 */
+		tags?: any;
+
+		/**
+		 * 搜索关键词
+		 */
+		keywords?: string;
+
+		/**
+		 * 是否推荐
+		 */
+		isRecommend?: number;
+
+		/**
+		 * 是否热门
+		 */
+		isHot?: number;
+
+		/**
+		 * 是否最新
+		 */
+		isNew?: number;
+
+		/**
+		 * 访问权限 0-公开 1-登录后可用
+		 */
+		authRequired?: number;
+
+		/**
+		 * 排序
+		 */
+		sort?: number;
+
+		/**
+		 * 状态 0-禁用 1-启用
+		 */
+		status?: number;
+
+		/**
+		 * 版本
+		 */
+		version?: string;
+
+		/**
+		 * 扩展配置
+		 */
+		config?: any;
+
+		/**
+		 * 备注
+		 */
+		remark?: string;
+
+		/**
+		 * 创建时间
+		 */
+		createTime?: string;
+
+		/**
+		 * 更新时间
+		 */
+		updateTime?: string;
+
+		/**
+		 * 分类名称
+		 */
+		categoryName?: string;
+
+		/**
+		 * 任意键值
+		 */
+		[key: string]: any;
+	}
+
+	interface ToolboxUsageEntity {
+		/**
+		 * ID
+		 */
+		id?: number;
+
+		/**
+		 * 用户ID
+		 */
+		userId?: number;
+
+		/**
+		 * 工具ID
+		 */
+		toolId?: number;
+
+		/**
+		 * 工具名称快照
+		 */
+		toolName?: string;
+
+		/**
+		 * 行为
+		 */
+		action?: string;
+
+		/**
+		 * 客户端类型
+		 */
+		clientType?: string;
+
+		/**
+		 * 创建时间
+		 */
+		createTime?: string;
+
+		/**
+		 * 更新时间
+		 */
+		updateTime?: string;
+
+		/**
+		 * 任意键值
+		 */
+		[key: string]: any;
+	}
+
 	interface UserAddressEntity {
 		/**
 		 * ID
@@ -1031,6 +1361,16 @@ declare namespace Eps {
 		list: DictTypeEntity[];
 	}
 
+	interface MessageInfoPageResponse {
+		pagination: PagePagination;
+		list: MessageInfoEntity[];
+	}
+
+	interface MessageReadPageResponse {
+		pagination: PagePagination;
+		list: MessageReadEntity[];
+	}
+
 	interface PluginInfoPageResponse {
 		pagination: PagePagination;
 		list: PluginInfoEntity[];
@@ -1054,6 +1394,21 @@ declare namespace Eps {
 	interface TaskInfoPageResponse {
 		pagination: PagePagination;
 		list: TaskInfoEntity[];
+	}
+
+	interface ToolboxCategoryPageResponse {
+		pagination: PagePagination;
+		list: ToolboxCategoryEntity[];
+	}
+
+	interface ToolboxToolPageResponse {
+		pagination: PagePagination;
+		list: ToolboxToolEntity[];
+	}
+
+	interface ToolboxUsagePageResponse {
+		pagination: PagePagination;
+		list: ToolboxUsageEntity[];
 	}
 
 	interface UserAddressPageResponse {
@@ -1769,6 +2124,93 @@ declare namespace Eps {
 		request: Request;
 	}
 
+	interface MessageInfo {
+		/**
+		 * 删除
+		 */
+		delete(data?: any): Promise<any>;
+
+		/**
+		 * 修改
+		 */
+		update(data?: any): Promise<any>;
+
+		/**
+		 * 单个信息
+		 */
+		info(data?: any): Promise<MessageInfoEntity>;
+
+		/**
+		 * 列表查询
+		 */
+		list(data?: any): Promise<MessageInfoEntity[]>;
+
+		/**
+		 * 分页查询
+		 */
+		page(data?: any): Promise<MessageInfoPageResponse>;
+
+		/**
+		 * 新增
+		 */
+		add(data?: any): Promise<any>;
+
+		/**
+		 * 权限标识
+		 */
+		permission: {
+			delete: string;
+			update: string;
+			info: string;
+			list: string;
+			page: string;
+			add: string;
+		};
+
+		/**
+		 * 权限状态
+		 */
+		_permission: {
+			delete: boolean;
+			update: boolean;
+			info: boolean;
+			list: boolean;
+			page: boolean;
+			add: boolean;
+		};
+
+		request: Request;
+	}
+
+	interface MessageRead {
+		/**
+		 * 列表查询
+		 */
+		list(data?: any): Promise<MessageReadEntity[]>;
+
+		/**
+		 * 分页查询
+		 */
+		page(data?: any): Promise<MessageReadPageResponse>;
+
+		/**
+		 * 单个信息
+		 */
+		info(data?: any): Promise<MessageReadEntity>;
+
+		/**
+		 * 权限标识
+		 */
+		permission: { list: string; page: string; info: string };
+
+		/**
+		 * 权限状态
+		 */
+		_permission: { list: boolean; page: boolean; info: boolean };
+
+		request: Request;
+	}
+
 	interface PluginInfo {
 		/**
 		 * 安装插件
@@ -2058,6 +2500,180 @@ declare namespace Eps {
 		request: Request;
 	}
 
+	interface ToolboxCategory {
+		/**
+		 * 删除
+		 */
+		delete(data?: any): Promise<any>;
+
+		/**
+		 * 修改
+		 */
+		update(data?: any): Promise<any>;
+
+		/**
+		 * 单个信息
+		 */
+		info(data?: any): Promise<ToolboxCategoryEntity>;
+
+		/**
+		 * 列表查询
+		 */
+		list(data?: any): Promise<ToolboxCategoryEntity[]>;
+
+		/**
+		 * 分页查询
+		 */
+		page(data?: any): Promise<ToolboxCategoryPageResponse>;
+
+		/**
+		 * 新增
+		 */
+		add(data?: any): Promise<any>;
+
+		/**
+		 * 权限标识
+		 */
+		permission: {
+			delete: string;
+			update: string;
+			info: string;
+			list: string;
+			page: string;
+			add: string;
+		};
+
+		/**
+		 * 权限状态
+		 */
+		_permission: {
+			delete: boolean;
+			update: boolean;
+			info: boolean;
+			list: boolean;
+			page: boolean;
+			add: boolean;
+		};
+
+		request: Request;
+	}
+
+	interface ToolboxTool {
+		/**
+		 * 删除
+		 */
+		delete(data?: any): Promise<any>;
+
+		/**
+		 * 修改
+		 */
+		update(data?: any): Promise<any>;
+
+		/**
+		 * 单个信息
+		 */
+		info(data?: any): Promise<ToolboxToolEntity>;
+
+		/**
+		 * 列表查询
+		 */
+		list(data?: any): Promise<ToolboxToolEntity[]>;
+
+		/**
+		 * 分页查询
+		 */
+		page(data?: any): Promise<ToolboxToolPageResponse>;
+
+		/**
+		 * 新增
+		 */
+		add(data?: any): Promise<any>;
+
+		/**
+		 * 权限标识
+		 */
+		permission: {
+			delete: string;
+			update: string;
+			info: string;
+			list: string;
+			page: string;
+			add: string;
+		};
+
+		/**
+		 * 权限状态
+		 */
+		_permission: {
+			delete: boolean;
+			update: boolean;
+			info: boolean;
+			list: boolean;
+			page: boolean;
+			add: boolean;
+		};
+
+		request: Request;
+	}
+
+	interface ToolboxUsage {
+		/**
+		 * 用户工具使用排行
+		 */
+		userToolStats(data?: any): Promise<any>;
+
+		/**
+		 * 用户使用排行
+		 */
+		userStats(data?: any): Promise<any>;
+
+		/**
+		 * 工具箱统计
+		 */
+		stats(data?: any): Promise<any>;
+
+		/**
+		 * 列表查询
+		 */
+		list(data?: any): Promise<ToolboxUsageEntity[]>;
+
+		/**
+		 * 分页查询
+		 */
+		page(data?: any): Promise<ToolboxUsagePageResponse>;
+
+		/**
+		 * 单个信息
+		 */
+		info(data?: any): Promise<ToolboxUsageEntity>;
+
+		/**
+		 * 权限标识
+		 */
+		permission: {
+			userToolStats: string;
+			userStats: string;
+			stats: string;
+			list: string;
+			page: string;
+			info: string;
+		};
+
+		/**
+		 * 权限状态
+		 */
+		_permission: {
+			userToolStats: boolean;
+			userStats: boolean;
+			stats: boolean;
+			list: boolean;
+			page: boolean;
+			info: boolean;
+		};
+
+		request: Request;
+	}
+
 	interface UserAddress {
 		/**
 		 * 删除
@@ -2206,10 +2822,12 @@ declare namespace Eps {
 		};
 		demo: { goods: DemoGoods; tenant: DemoTenant };
 		dict: { info: DictInfo; type: DictType };
+		message: { info: MessageInfo; read: MessageRead };
 		plugin: { info: PluginInfo };
 		recycle: { data: RecycleData };
 		space: { info: SpaceInfo; type: SpaceType };
 		task: { info: TaskInfo };
+		toolbox: { category: ToolboxCategory; tool: ToolboxTool; usage: ToolboxUsage };
 		user: { address: UserAddress; info: UserInfo };
 	};
 }

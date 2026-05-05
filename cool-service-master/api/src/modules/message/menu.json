@@ -1,0 +1,76 @@
+[
+  {
+    "name": "消息通知",
+    "router": "/message",
+    "perms": null,
+    "type": 0,
+    "icon": "icon-notice",
+    "orderNum": 2,
+    "viewPath": null,
+    "keepAlive": true,
+    "isShow": true,
+    "childMenus": [
+      {
+        "name": "消息管理",
+        "router": "/message/info",
+        "perms": null,
+        "type": 1,
+        "icon": "icon-notice",
+        "orderNum": 1,
+        "viewPath": "modules/message/views/info.vue",
+        "keepAlive": true,
+        "isShow": true,
+        "childMenus": [
+          {
+            "name": "新增",
+            "router": null,
+            "perms": "message:info:add",
+            "type": 2,
+            "icon": null,
+            "orderNum": 1,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          },
+          {
+            "name": "删除",
+            "router": null,
+            "perms": "message:info:delete",
+            "type": 2,
+            "icon": null,
+            "orderNum": 2,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          },
+          {
+            "name": "修改",
+            "router": null,
+            "perms": "message:info:update",
+            "type": 2,
+            "icon": null,
+            "orderNum": 3,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          },
+          {
+            "name": "查询",
+            "router": null,
+            "perms": "message:info:page,message:info:list,message:info:info",
+            "type": 2,
+            "icon": null,
+            "orderNum": 4,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          }
+        ]
+      }
+    ]
+  }
+]

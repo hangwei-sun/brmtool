@@ -38,7 +38,29 @@ const api = {
 
   // ── HTTP 请求模块（Renderer → Main）─────────────────────────────────
   /** 通过 Main 进程发起外部 HTTP 请求，绕过浏览器 CORS 限制 */
-  fetchUrl: (url: string, method?: string) => ipcRenderer.invoke('request:fetch', { url, method })
+  fetchUrl: (url: string, method?: string) => ipcRenderer.invoke('request:fetch', { url, method }),
+
+  // ── APP 后端模块（Renderer → Main）──────────────────────────────────
+  /** 请求 APP 后端接口，仅允许 /app/toolbox、/app/user、/app/message 白名单路径 */
+  appRequest: (payload: { path: string; method?: string; data?: unknown }) =>
+    ipcRenderer.invoke('app:request', payload),
+
+  /** 获取本机登录态 */
+  getAuthSession: () => ipcRenderer.invoke('auth:get-session'),
+
+  /** 保存本机登录态 */
+  setAuthSession: (session: unknown) => ipcRenderer.invoke('auth:set-session', session),
+
+  /** 清除本机登录态 */
+  clearAuthSession: () => ipcRenderer.invoke('auth:clear-session'),
+
+  // ── 工具箱模块（Renderer → Main）──────────────────────────────────
+  /** 请求工具箱后端接口，兼容旧调用；实际走 APP 白名单 */
+  toolboxRequest: (payload: { path: string; method?: string; data?: unknown }) =>
+    ipcRenderer.invoke('toolbox:request', payload),
+
+  /** 使用系统浏览器打开工具外链 */
+  openExternalTool: (url: string) => ipcRenderer.invoke('toolbox:open-external', url)
 }
 
 if (process.contextIsolated) {

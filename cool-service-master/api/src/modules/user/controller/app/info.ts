@@ -38,6 +38,19 @@ export class AppUserInfoController extends BaseController {
     return this.ok();
   }
 
+  @Post('/updatePasswordByOld', { summary: '通过旧密码更新用户密码' })
+  async updatePasswordByOld(
+    @Body('oldPassword') oldPassword: string,
+    @Body('newPassword') newPassword: string
+  ) {
+    await this.userInfoService.updatePasswordByOld(
+      this.ctx.user.id,
+      oldPassword,
+      newPassword
+    );
+    return this.ok();
+  }
+
   @Post('/logoff', { summary: '注销' })
   async logoff() {
     await this.userInfoService.logoff(this.ctx.user.id);
