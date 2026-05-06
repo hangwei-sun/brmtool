@@ -1,7 +1,7 @@
 {
-    "name" : "cool-uni",
+    "name" : "数智工具箱",
     "appid" : "__UNI__0851111",
-    "description" : "",
+    "description" : "数智工具箱 H5/PWA 移动端",
     "versionName" : "1.0.0",
     "versionCode" : 100,
     "transformPx" : false,
@@ -172,6 +172,7 @@
     },
     "vueVersion" : "3",
     "h5" : {
+        "title" : "数智工具箱",
         "router" : {
             "base" : "./",
             "mode" : "hash"

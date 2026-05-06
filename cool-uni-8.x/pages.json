@@ -56,6 +56,23 @@
 			]
 		},
 		{
+			"root": "pages/toolbox",
+			"pages": [
+				{
+					"path": "home",
+					"style": {
+						"navigationStyle": "custom"
+					}
+				},
+				{
+					"path": "webview",
+					"style": {
+						"navigationBarTitleText": "工具"
+					}
+				}
+			]
+		},
+		{
 			"root": "pages/demo",
 			"pages": [
 				{
