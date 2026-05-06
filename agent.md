@@ -10,31 +10,18 @@
 - 后端：提供工具配置、收藏、使用记录、统计、登录鉴权、站内消息接口。
 
 ### MVP 范围
-- 核心 MVP 已完成：工具管理、桌面首页、搜索、收藏、打开工具、使用统计、本地缓存。
-- 扩展 MVP 已完成：登录权限、消息通知、留言板插件、内嵌 WebView、软件下载页、桌面端在线更新。
-- 支持工具类型：`external_link` 外部链接、`internal_web` 内置 Web 工具、`local_plugin` 本地插件。
-- 首批内置工具已完成：JSON 格式化、Base64 编解码、URL 编码/解码、文本去重、Markdown 预览、时间戳转换。
-- 下一阶段：P13 上线交付收敛，聚焦真实域名部署、CI/Windows 打包、在线更新全链路验证和发布检查。
-- 暂缓：插件市场、第三方插件沙箱、插件自动更新、任意本地命令执行、移动端适配。
+- 核心能力已完成：工具管理、桌面首页、搜索、收藏、打开工具、使用统计、本地缓存、登录权限、消息通知、留言板插件、内嵌 WebView、软件下载页、桌面端在线更新。
+- 支持工具类型：`external_link` 外部链接、`internal_web` 内置 Web 工具、`local_plugin` 本地插件；首批内置工具已完成 6 个。
+- 当前主线：`P13 上线交付收敛` 和 `P15-P18 插件/移动端能力收敛`。
+- 暂缓：远程插件市场、Node 插件、本机命令、任意文件系统访问、原生移动端、小程序。
 
 ### 进度跟踪
 | 阶段 | 状态 | 目标 |
 | --- | --- | --- |
-| P0 文档与规则 | 已完成 | 精简本文件，作为后续 AI 开发入口 |
-| P1 数据库与后端模块 | 已完成 | MySQL 配置、`toolbox` 模块、实体、接口、默认数据 |
-| P2 后台管理端 | 已完成 | 分类管理、工具管理、基础统计 |
-| P3 Electron 首页 UI | 已完成 | 深色科技风首页、工具卡片、分类、搜索、收藏 |
-| P4 桌面端数据接入 | 已完成 | 首页接口、工具列表、缓存、收藏、使用记录 |
-| P5 内置工具 | 已完成 | 6 个内置工具页面和内部路由 |
-| P6 验证与收敛 | 已完成 | typecheck、build、启动验证 |
-| P7 登录与访问权限 | 已完成 | APP 用户登录、token 注入、工具级访问控制 |
-| P8 消息通知 | 已完成 | 后台消息管理、桌面端站内信、系统通知 |
-| P9 上线部署准备 | 已完成 | 生产 env、Nginx 示例、后端/管理端/桌面端入口配置 |
-| P10 桌面端在线更新 | 已完成 | electron-updater、更新检查、自动下载、提示安装、更新产物配置 |
-| P11 插件化与内嵌浏览体验 | 已完成 | 留言板本地插件、工具管理统一入口、内嵌 WebView 全屏自适应、侧栏折叠 |
-| P12 软件下载页 | 已完成 | `/download` 公开下载单页、系统识别 macOS/Windows、下载地址环境变量配置 |
-| P13 上线交付收敛 | 进行中 | 域名配置脚本、发布检查、CI/Windows 打包、更新链路验证 |
-| P14 上线后运营增强 | 进行中 | 运营路线图、数据看板、插件体系、后台配置化增强 |
+| 基础 MVP | 已完成 | 后端模块、后台管理、桌面首页、数据接入、内置工具、验证收敛 |
+| 账号消息与桌面体验 | 已完成 | 登录权限、消息通知、留言板、WebView、下载页、在线更新 |
+| P13 上线交付 | 进行中 | 生产部署、Windows/CI 打包、更新链路验证 |
+| P15-P18 插件与移动端 | 进行中 | 插件市场、Web 沙箱、插件更新、H5/PWA |
 
 ## 2. 项目结构与技术栈
 
@@ -44,7 +31,7 @@ brmtool/
 │   ├── api/   # Midway.js + COOL Admin + TypeORM 后端
 │   └── vue/   # Vue 3 + Element Plus + COOL Admin 管理端
 ├── cool-electron/  # Electron + electron-vite + Vue 3 + Naive UI 桌面端
-├── cool-uni-8.x/   # UniApp，MVP 暂不改
+├── cool-uni-8.x/   # UniApp，H5/PWA 移动端入口
 └── agent.md        # 本文件
 ```
 
@@ -130,6 +117,7 @@ node start-dev.js
 - `ToolboxFavoriteEntity`：`userId`、`toolId`，同一用户同一工具唯一。
 - `ToolboxUsageEntity`：`userId`、`toolId`、`toolName`、`action=open`、`clientType=electron`、`createdAt`。
 - `ToolboxFeedbackEntity`：留言板插件数据，保存用户建议、联系方式、处理状态和回复内容。
+- `ToolboxPluginEntity`：工具箱插件市场数据，保存插件清单、版本、权限、包地址、checksum、审核/发布/安装状态。
 - `MessageInfoEntity`：保存标题、内容、等级、目标范围、跳转动作、发布时间、状态。
 - `MessageReadEntity`：保存 `messageId + userId` 已读状态。
 
@@ -137,6 +125,9 @@ node start-dev.js
 - 管理端：分类 CRUD、工具 CRUD、启停/推荐/热门/最新/排序、使用统计。
 - 登录：复用 APP 用户体系，桌面端用 `/app/user/login/password` 和 `/app/user/info/person`。
 - 留言板：桌面端提交我的建议，后台查看、更新、删除留言数据。
+- 插件市场：
+  - `GET /app/toolbox/plugins/market`
+  - `POST /app/toolbox/plugins/checkUpdates`
 - 消息：
   - `GET /app/message/list`
   - `GET /app/message/unreadCount`
@@ -151,7 +142,7 @@ node start-dev.js
 
 ### 安全
 - 外部链接只允许 `http`、`https`。
-- `local_plugin` 第一阶段只保存配置，不执行命令。
+- `local_plugin` 第三方插件第一版只允许 Web 沙箱运行，不执行 Node、本机命令、子进程或任意文件系统访问。
 - 收藏和使用记录绑定当前用户。
 - Electron Main 请求后端必须走白名单 IPC，允许 `/app/toolbox/**`、`/app/user/**`、`/app/message/**`，并自动注入 `Authorization`。
 - 未登录用户只能打开公开工具；受保护工具必须由后端和桌面端同时拦截。
@@ -169,6 +160,7 @@ node start-dev.js
 - 留言板管理：留言板作为 `local_plugin` 工具统一出现在工具管理中，工具行提供留言数据入口。
 - 表单要求：类型和打开方式用下拉；`config` 做 JSON 格式校验；`entry` 根据类型展示提示。
 - 工具表单新增访问权限：公开访问、登录后访问。
+- 插件市场：管理员维护插件包、版本、权限、审核状态、发布状态；发布后自动关联为 `local_plugin` 工具。
 
 ## 8. Electron 桌面端设计摘要
 
@@ -189,117 +181,21 @@ node start-dev.js
 - 打开工具后记录 `/app/toolbox/usage`，并更新本地最近使用和今日次数。
 - 点击受保护工具时，未登录先弹登录框；登录成功后继续打开原工具。
 - 消息默认 60 秒轮询一次；新重要消息调用现有 `notification:send`。
+- 启动后检查已关联插件版本；插件更新不影响主程序在线更新链路。
 
 ### 打开方式
 - `external_browser`：主进程 `shell.openExternal`。
 - `electron_window`：主进程创建独立工具窗口。
 - `embedded_webview`：桌面端内嵌 WebView 打开，提供返回、刷新、返回首页、关闭和地址栏。
 - `internal_route`：Renderer 内部路由。
+- `local_plugin + plugin:<code>`：Electron WebView 沙箱运行；`nodeIntegration=no`、`contextIsolation=yes`、`sandbox=yes`，只暴露 `window.brmtoolPlugin` 受限 API。
 
 ## 9. 分阶段实施清单
 
-### P1 数据库与后端模块
-- [x] 新建本机 MySQL 数据库 `brmtool`。
-- [x] 将 `config.local.ts` 从 SQLite 切到本机 MySQL。
-- [x] 新增 `toolbox` 后端模块、实体、service、controller。
-- [x] 初始化默认分类和 6 个内置工具配置。
-- [x] 完成管理端 CRUD 接口和桌面端 app 接口。
-- [x] 运行后端检查。
-
-### P2 后台管理端
-- [x] 新增 `toolbox` 管理端模块。
-- [x] 实现分类管理页面。
-- [x] 实现工具管理页面。
-- [x] 实现基础统计页面。
-- [x] 运行管理端检查。
-
-### P3 Electron 首页 UI
-- [x] 重构桌面端首页为工具箱布局。
-- [x] 实现左侧导航、顶部搜索、banner、收藏区、推荐区。
-- [x] 抽取工具卡片、分类导航、统计卡片组件。
-- [x] 运行桌面端 typecheck。
-
-### P4 桌面端数据接入
-- [x] 接入首页和工具列表接口。
-- [x] 实现本地缓存和离线降级。
-- [x] 实现收藏/取消收藏。
-- [x] 实现打开工具和使用记录。
-
-### P5 内置工具
-- [x] JSON 格式化。
-- [x] Base64 编解码。
-- [x] URL 编码/解码。
-- [x] 文本去重。
-- [x] Markdown 预览。
-- [x] 时间戳转换。
-
-### P6 验证与收敛
-- [x] 后端 API 可启动并连接 MySQL。
-- [x] 管理端可维护工具分类和工具。
-- [x] 桌面端可展示、搜索、收藏、打开工具。
-- [x] 后端不可用时桌面端可用缓存或默认工具。
-- [x] 当前阶段相关检查通过。
-
-### P7 登录与访问权限
-- [x] 后端补齐 APP 用户后台密码保存加密。
-- [x] 工具表新增 `authRequired` 并接入工具管理筛选和表单。
-- [x] 后端工具详情、收藏、使用记录增加登录态和访问权限处理。
-- [x] Electron 增加登录态服务、token/refreshToken 缓存、退出登录。
-- [x] Main 进程新增统一 APP 请求白名单和 token 注入。
-- [x] 桌面端“我的”区域改为登录入口/用户菜单。
-- [x] 未登录点击受保护工具时弹出登录框，登录成功后继续打开。
-
-### P8 消息通知
-- [x] 后端新增 `message` 模块、消息表、已读表、APP 消息接口。
-- [x] 后台新增消息管理页面，支持草稿、发布、下线。
-- [x] Electron 顶部新增通知入口、未读数、消息抽屉、消息详情。
-- [x] 桌面端轮询未读消息，重要消息触发系统级通知。
-- [x] 验证全体消息、指定用户消息、已读状态隔离。
-
-### P9 上线部署准备
-- 前置输入：真实域名、服务器系统、Node 版本、MySQL 地址、部署目录、HTTPS 证书来源。
-- 部署形态：采用同域名分路径，`https://tool.baotounews.cn/` 为管理端，`/api` 为后端接口，`/updates/desktop` 为桌面端更新包静态目录。
-- [x] 后端生产入口：`config.prod.ts` 改为读取环境变量 `BRMTOOL_PORT`、`BRMTOOL_DB_HOST`、`BRMTOOL_DB_PORT`、`BRMTOOL_DB_USER`、`BRMTOOL_DB_PASSWORD`、`BRMTOOL_DB_NAME`。
-- [x] 后端生产安全：保持 `synchronize=false`、`eps=false`、`initDB=false`、`initMenu=false`；禁止生产自动同步表结构。
-- [x] 后端环境示例：新增 `cool-service-master/api/.env.production.example`，只写变量名和占位值，不提交真实密码、JWT secret、证书、token。
-- [x] Nginx 反代规则：`/api/*` rewrite 到后端根路径，保证现有 `/admin/**`、`/app/**` 接口代码不改路径。
-- [x] Nginx 静态目录：管理端 `dist` 指向站点根路径，桌面端更新包目录指向 `/updates/desktop`，并允许 `.yml`、`.blockmap`、`.exe`、`.dmg`、`.zip` 下载。
-- [x] 管理端生产入口：生产 `baseUrl='/api'`，移除或替换 `show.cool-admin.com` 示例目标；增加 `VITE_PUBLIC_ORIGIN=https://tool.baotounews.cn` 或同等环境变量说明。
-- [x] Electron API 入口：Main 进程统一从 `BRMTOOL_API_BASE` 读取后端地址；本地默认 `http://127.0.0.1:8001`，生产默认 `https://tool.baotounews.cn/api`。
-- [x] Electron 安全边界：保留 APP 请求 IPC 白名单，只允许 `/app/toolbox/**`、`/app/user/**`、`/app/message/**`，Renderer 不允许传入任意后端 base URL。
-- [x] 构建配置：更新 `electron-builder.yml` 的 `appId`、`productName`、artifactName、`publish.provider=generic`、`publish.url=https://tool.baotounews.cn/updates/desktop`。
-- [x] 部署文档：补充发布步骤，包含后端构建启动、管理端构建上传、更新包上传、回滚方式和健康检查 URL。
-
-### P10 桌面端在线更新
-- 更新策略：首版采用 `electron-updater + electron-builder generic provider`；启动后自动检查，发现新版本自动下载，下载完成后提示用户重启安装。
-- 平台范围：首发 macOS + Windows；Linux 不作为本阶段验收目标。
-- [x] 增加依赖：`electron-updater`、`electron-log`，保存更新日志，方便定位线上更新失败。
-- [x] Main 模块：新增 `cool-electron/src/main/updater/index.ts`，封装 `checkForUpdates`、下载进度、错误、完成、`quitAndInstall`。
-- [x] 主进程接入：在 `cool-electron/src/main/index.ts` 只注册 updater 模块，不堆业务逻辑。
-- [x] IPC 白名单：Preload 暴露 `checkForUpdates`、`installUpdate`、`onUpdateStatus`，Renderer 只能调用这些更新能力。
-- [x] Renderer UI：在顶部和“我的”菜单增加“检查更新”，用现有深色模态框展示当前版本、最新版本、下载进度、错误和安装按钮。
-- [x] 用户体验：自动下载时不阻塞工具使用；下载完成弹出“立即重启安装 / 稍后”；稍后安装保留入口。
-- [x] 发布产物：macOS 已配置生成 `latest-mac.yml`、dmg、zip、blockmap；Windows 配置生成 NSIS 安装包、`latest.yml` 和 blockmap。
-- [x] 回滚策略：保留上一版更新包和元数据备份；如新版本异常，恢复旧版 `latest*.yml` 指向稳定版本。
-
-### P11 插件化与内嵌浏览体验
-- [x] 新增留言板本地插件：登录用户可在桌面端提交使用建议，后台可查看、更新、删除留言数据。
-- [x] 留言板统一作为工具/插件处理：在工具管理列表中显示 `feedback-board` 工具，不再作为独立顶部按钮入口。
-- [x] 后台工具管理中，留言板行提供“留言数据”操作入口；菜单中的使用建议页作为隐藏路由保留。
-- [x] 后端提供留言板工具自动创建能力；已有工具记录不覆盖，避免管理员修改后被重置。
-- [x] 桌面端外链支持 `embedded_webview` 内嵌打开，提供返回、刷新、返回首页、关闭和地址栏。
-- [x] WebView 运行区使用“顶部栏 + 剩余空间舞台”布局；通过 `ResizeObserver` 同步真实像素尺寸，确保窗口全屏、缩放、侧栏折叠时网页区域自适应。
-- [x] 左侧菜单支持手动折叠，并将折叠状态保存到本地。
-- [x] 优化桌面端工具卡收藏按钮、侧栏边界、统计卡边界，避免按钮偏移和菜单撑出。
-
-### P12 软件下载页
-- [x] 管理端前端新增公开 page：`/download`，加入 `ignore.token`，未登录也可访问。
-- [x] 页面不进入后台主布局，采用深色科技风首屏、产品介绍、桌面端视觉和平台下载卡片。
-- [x] 主下载按钮根据 `navigator.userAgent` / `navigator.platform` 自动识别 macOS 或 Windows。
-- [x] 未识别系统时不自动指向任意平台，提示用户在平台卡片中手动选择。
-- [x] 下载地址通过环境变量配置：`VITE_DESKTOP_DOWNLOAD_MAC_URL`、`VITE_DESKTOP_DOWNLOAD_WINDOWS_URL`。
-- [x] `.env.production.example` 补充下载地址示例，建议指向 `/updates/desktop` 下的静态安装包别名。
-- [x] 下载页不调用后端接口，不新增数据库表，不影响管理端登录和后台功能。
+### 历史完成摘要
+- 基础 MVP 已完成：本机 MySQL、`toolbox` 后端模块、分类/工具/统计后台、Electron 首页、工具列表、缓存、收藏、使用记录、6 个内置工具和基础验证。
+- 账号消息与桌面体验已完成：APP 用户登录、工具级权限、token 注入、消息通知、留言板插件、内嵌 WebView、侧栏折叠、软件下载页和桌面端在线更新。
+- 上线基础已完成：生产 env 示例、Nginx/1Panel/宝塔部署文档、域名 `tool.baotounews.cn` 配置脚本、发布检查脚本和桌面端 CI 打包工作流。
 
 ### P13 上线交付收敛
 - 目标：把已完成 MVP 从本地开发态收敛为可内测上线的发布链路。
@@ -324,19 +220,43 @@ node start-dev.js
 - [ ] 下载页配置化：将 macOS/Windows 下载地址、版本号、更新说明从环境变量升级为后台配置。
 - [ ] 消息触达增强：支持按用户、工具使用行为、最近活跃时间筛选发送站内信。
 - [ ] 留言板运营闭环：增加处理人、处理耗时、常见反馈分类和状态筛选。
-- [ ] 插件体系准备：定义插件元信息、权限说明、运行入口、配置 schema 和审核状态。
 
-### P6 验证记录
-- 后端：`pnpm lint`、`pnpm build` 通过；本机 MySQL 下 `/app/toolbox/home`、工具列表、工具详情返回正常。
-- 管理端：`pnpm type-check`、`pnpm build` 通过；在线 EPS 可识别 `toolbox` 模块。
-- 桌面端：`pnpm typecheck`、`pnpm build` 通过；`pnpm dev` 可启动 Electron main/preload/renderer。
-- 安全：未发现数据库密码写入源码；临时后端/Electron 验证进程已关闭。
+### P15 插件标准与市场后台
+- 目标：第一版插件市场采用后台自建，插件包由管理员上传到受控静态目录后，在后台录入、审核、发布。
+- [x] 新增 `plugin.json` 规范文档：`code`、`name`、`version`、`entry`、`icon`、`permissions`、`minAppVersion`、`checksum`、`packageUrl`。
+- [x] 后端新增 `ToolboxPluginEntity`，保存插件包、版本、权限、审核状态、发布状态、安装状态和更新说明。
+- [x] 管理端新增插件市场页面：插件 CRUD、权限配置、审核/发布/下线、关联工具。
+- [x] 插件发布后自动创建或更新 `toolbox_tool`，类型为 `local_plugin`，入口为 `plugin:<code>`。
+- [x] 插件 zip 上传、解包、checksum 服务端校验已接入；后台上传后生成 `/plugins/<code>/<version>/` 静态入口和 `/plugins/<code>/<version>.zip` 包地址。
+- [ ] 插件版本记录、审核流转和安装失败原因展示继续细化。
 
-### P7/P8 验证记录
-- 后端：`pnpm build` 通过；`pnpm lint` 通过。
-- 管理端：`pnpm type-check`、`pnpm build` 通过。
-- 桌面端：`pnpm typecheck`、`pnpm build` 通过。
-- 说明：后端 `pnpm build` 会生成临时 `src/index.ts`，验证后已移除该生成文件，避免提交构建产物。
+### P16 第三方插件 Web 沙箱
+- 目标：第三方插件第一版只允许 Web 沙箱运行，默认无本机能力。
+- [x] Electron 新增插件运行容器，只加载可信 HTTPS 或 `/plugins/` 相对入口。
+- [x] WebView 强制 `sandbox=yes`、`nodeIntegration=no`、`contextIsolation=yes`。
+- [x] 单独插件 preload 只暴露 `window.brmtoolPlugin`，避免复用主程序 `window.api`。
+- [x] 插件请求 IPC 只允许 `/app/toolbox/**` 白名单路径。
+- [x] 插件私有存储使用插件作用域 localStorage。
+- [x] 插件运行前按 `permissions` 展示权限确认，用户确认后再加载 Web 沙箱。
+- [ ] 插件能力开关继续保持白名单收敛；后续如新增权限必须同时补后端校验、preload 和 UI 提示。
+
+### P17 插件自动更新
+- 目标：插件包更新独立于主程序更新，失败时不影响主程序和旧版插件。
+- [x] 后端提供 `/app/toolbox/plugins/checkUpdates`，返回可更新插件、版本、包地址、checksum、更新说明。
+- [x] 桌面端启动后根据已安装 `plugin:<code>` 工具检查插件版本，发现更新后提示同步状态。
+- [x] 桌面端后台下载插件包、校验 checksum，并原子写入本地插件包缓存；运行入口仍以后台发布的 `/plugins/` 静态入口为准。
+- [ ] 插件包本地解包运行、运行失败自动回滚到最后可用版本。
+- [ ] 管理端展示本机安装版本、最新版本、更新状态和失败原因。
+
+### P18 移动端 H5/PWA
+- 目标：先用 `cool-uni-8.x` 做 H5/PWA，覆盖浏览、搜索、收藏、打开 Web 工具和消息入口。
+- [x] 新增 H5 工具箱首页：分类、搜索、推荐工具、移动端工具卡。
+- [x] 复用 `/app/toolbox/home` 聚合接口，工具列表按后台 `sort` 倒序展示。
+- [x] 新增 H5 WebView 打开页；`external_link` 和适合 Web 的 `internal_web` 可在移动端打开。
+- [x] `local_plugin` 在移动端标记为“仅桌面”，不误开桌面专属插件。
+- [x] UniApp 生产代理域名更新为 `https://tool.baotounews.cn`。
+- [x] H5 登录态拦截、收藏同步、消息列表/未读数、基础 manifest 和离线提示已完成。
+- [ ] H5/PWA service worker 离线缓存策略、移动端空状态和弱网体验继续完善。
 
 ### P13 验证计划
 - 配置检查：搜索确认生产代码不再残留 `show.cool-admin.com`、`https://example.com/auto-updates`、生产数据库示例密码和真实密钥。
@@ -346,31 +266,19 @@ node start-dev.js
 - 更新链路：本地模拟 update server，验证检查更新、下载进度、下载完成提示、稍后安装、立即安装 IPC 流程。
 - 发布验证：安装旧版本客户端，确认能发现新版本、自动下载、提示重启安装并升级成功；验证失败时可回滚到上一版元数据。
 
-### P9/P10 验证记录
-- 后端：`pnpm build`、`pnpm lint` 通过；构建生成的临时 `src/index.ts` 已移除。
-- 管理端：`pnpm type-check`、`pnpm build` 通过；本地 API 未启动时 EPS 在线刷新会提示失败，但构建可使用已有 EPS 完成。
-- 桌面端：`pnpm typecheck`、`pnpm build`、`pnpm build:mac --publish never` 通过。
-- macOS 打包：已生成 dmg、zip 和 blockmap；本机无 Apple Developer ID，当前未签名。
-- Windows 打包：`pnpm build:win --publish never` 在 Apple Silicon Mac 上失败于 `wine64: bad CPU type in executable`，需在 Windows 机器或 CI 补跑。
-- 配置搜索：后端/管理端/Electron 生产入口已移除 `show.cool-admin.com`、`https://example.com/auto-updates`、生产数据库示例密码。
-
-### P11/P12 验证记录
-- 后端：`pnpm build`、`pnpm lint` 通过；构建生成的临时 `src/index.ts` 已移除。
-- 管理端：`pnpm type-check`、`pnpm build` 通过；`/download` 已生成独立下载页 chunk。
-- 桌面端：`pnpm typecheck`、`pnpm build` 通过。
-- 说明：Windows 安装包与在线更新完整链路已纳入 P13 上线交付收敛。
+### 最近验证记录
+- 后端：`pnpm build`、删除构建生成的临时 `src/index.ts` 后 `pnpm lint` 通过。
+- 管理端：`pnpm type-check`、`pnpm build` 通过；构建时本地 API 未启动，EPS 拉取提示失败但使用现有缓存继续完成构建。
+- 桌面端：`pnpm typecheck`、`pnpm build` 通过；`out/preload/plugin.js` 和主 preload 均已生成。
+- 移动端：`pnpm exec tsc --noEmit` 通过；`pnpm exec vite build` 仍需补齐 UniApp/HBuilderX 构建环境。
+- 发布检查：`node scripts/check-release-config.mjs` 通过；提示 `UPDATE_DIR` 未设置，因此本地未检查更新包元数据。
+- 通用：`git diff --check` 通过。
 
 ## 10. 验收标准
 
-- 后端连接本机 MySQL，工具分类、工具信息、收藏、使用记录可用。
-- 后台可以管理分类、工具、状态、排序、推荐位和基础统计。
-- 桌面端具备深色科技工具箱首页，可搜索、收藏、打开外链和内置工具。
-- 登录后收藏、使用记录、受保护工具访问、个人消息可同步到后端。
-- 后台可维护 APP 用户、工具访问权限和站内消息。
-- 桌面端可展示未读消息，并对重要消息触发系统通知。
-- 上线后管理端、后端和桌面端统一指向 `https://tool.baotounews.cn` 同域名分路径。
-- 桌面端 macOS + Windows 安装包可通过 `/updates/desktop` 完成在线更新。
-- 软件下载页 `/download` 可公开访问，并按系统展示 macOS/Windows 下载入口。
-- 留言板作为本地插件统一出现在工具管理和桌面端工具体系中。
-- 内嵌 WebView 网页可在桌面端主内容区全屏自适应展示。
-- 代码遵循现有 CoolAdmin / Electron 风格，不引入无必要依赖，不破坏已有模块。
+- 后端、后台、桌面端核心工具链可用：分类、工具、收藏、使用记录、统计、内置工具和外链打开流程稳定。
+- 登录、权限、消息、留言板和统计数据可在桌面端与后端之间同步。
+- 上线后管理端、后端、下载页和桌面端更新链路统一指向 `https://tool.baotounews.cn` 同域名分路径，可支撑 unsigned 内测发布。
+- 后台可维护自建插件市场；已发布插件可关联为 `local_plugin` 工具，第三方插件只能在 Web 沙箱内运行。
+- H5/PWA 移动端可复用工具箱接口展示、搜索并打开适合 Web 的工具，桌面专属插件不误开。
+- 代码遵循现有 CoolAdmin / Electron 风格，不提交密钥、构建产物或本地缓存，不破坏白名单 IPC 和生产安全约束。
