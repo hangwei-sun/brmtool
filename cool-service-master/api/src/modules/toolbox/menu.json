@@ -158,12 +158,73 @@
         ]
       },
       {
+        "name": "插件市场",
+        "router": "/toolbox/plugin",
+        "perms": null,
+        "type": 1,
+        "icon": "icon-app",
+        "orderNum": 4,
+        "viewPath": "modules/toolbox/views/plugin.vue",
+        "keepAlive": true,
+        "isShow": true,
+        "childMenus": [
+          {
+            "name": "新增",
+            "router": null,
+            "perms": "toolbox:plugin:add",
+            "type": 2,
+            "icon": null,
+            "orderNum": 1,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          },
+          {
+            "name": "删除",
+            "router": null,
+            "perms": "toolbox:plugin:delete",
+            "type": 2,
+            "icon": null,
+            "orderNum": 2,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          },
+          {
+            "name": "修改",
+            "router": null,
+            "perms": "toolbox:plugin:update",
+            "type": 2,
+            "icon": null,
+            "orderNum": 3,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          },
+          {
+            "name": "查询",
+            "router": null,
+            "perms": "toolbox:plugin:page,toolbox:plugin:list,toolbox:plugin:info,toolbox:plugin:publish,toolbox:plugin:offline,toolbox:plugin:linkTool,toolbox:plugin:uploadPackage",
+            "type": 2,
+            "icon": null,
+            "orderNum": 4,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          }
+        ]
+      },
+      {
         "name": "使用建议",
         "router": "/toolbox/feedback",
         "perms": null,
         "type": 1,
         "icon": "icon-message",
-        "orderNum": 4,
+        "orderNum": 5,
         "viewPath": "modules/toolbox/views/feedback.vue",
         "keepAlive": true,
         "isShow": false,

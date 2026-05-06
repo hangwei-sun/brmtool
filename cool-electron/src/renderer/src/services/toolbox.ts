@@ -28,6 +28,20 @@ export interface ToolboxTool {
   isNew?: number | boolean
   authRequired?: number | boolean
   isFavorite?: boolean
+  version?: string
+  config?: Record<string, any>
+}
+
+export interface ToolboxPluginUpdate {
+  code: string
+  name: string
+  version: string
+  entry: string
+  packageUrl?: string
+  checksum?: string
+  permissions?: string[]
+  minAppVersion?: string
+  changelog?: string
 }
 
 export interface ToolboxUsageStats {
@@ -314,6 +328,36 @@ export async function fetchMyFeedback() {
 
 export async function submitFeedback(data: { title: string; content: string; contact?: string }) {
   return await toolboxRequest<{ id: number }>('/app/toolbox/feedback/submit', 'POST', data)
+}
+
+export async function fetchPluginUpdates(installed: Array<{ code: string; version?: string }>) {
+  const data = await toolboxRequest<{ list: ToolboxPluginUpdate[] }>('/app/toolbox/plugins/checkUpdates', 'POST', {
+    installed
+  })
+  return data.list || []
+}
+
+export async function installPluginUpdates(updates: ToolboxPluginUpdate[]) {
+  if (typeof window.api.installPluginUpdates !== 'function') {
+    return []
+  }
+
+  const result = await window.api.installPluginUpdates(
+    updates
+      .filter((item) => item.packageUrl)
+      .map((item) => ({
+        code: item.code,
+        version: item.version,
+        packageUrl: item.packageUrl as string,
+        checksum: item.checksum
+      }))
+  )
+
+  if (!result.success) {
+    throw new Error(result.error || '插件更新安装失败')
+  }
+
+  return result.data?.list || []
 }
 
 async function toolboxRequest<T>(path: string, method: 'GET' | 'POST' = 'GET', data?: unknown) {

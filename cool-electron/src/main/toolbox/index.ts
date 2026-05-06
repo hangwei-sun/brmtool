@@ -1,13 +1,16 @@
 import { app, ipcMain, shell } from 'electron'
-import { readFileSync, writeFileSync, rmSync, existsSync } from 'fs'
+import { readFileSync, writeFileSync, rmSync, existsSync, mkdirSync, renameSync } from 'fs'
 import { join } from 'path'
+import { createHash } from 'crypto'
 
 const DEFAULT_DEV_API_BASE = 'http://127.0.0.1:8001'
 const DEFAULT_PROD_API_BASE = 'https://tool.baotounews.cn/api'
 const TIMEOUT_MS = 8000
 const ALLOWED_METHODS = new Set(['GET', 'POST'])
 const APP_PATH_PREFIXES = ['/app/toolbox/', '/app/user/', '/app/message/']
+const PLUGIN_PATH_PREFIXES = ['/app/toolbox/']
 const SESSION_FILE = 'brmtool-auth-session.json'
+const PLUGIN_STATE_FILE = 'brmtool-plugin-state.json'
 
 interface AppRequestPayload {
   path: string
@@ -24,6 +27,13 @@ interface AuthSession {
   user?: unknown
 }
 
+interface PluginUpdatePayload {
+  code: string
+  version: string
+  packageUrl: string
+  checksum?: string
+}
+
 function hasPathTraversal(path: string) {
   const pathname = path.split(/[?#]/)[0]
 
@@ -36,6 +46,10 @@ function hasPathTraversal(path: string) {
 
 function isAllowedAppPath(pathname: string) {
   return APP_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+}
+
+function isAllowedPluginPath(pathname: string) {
+  return PLUGIN_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))
 }
 
 function apiBaseUrl() {
@@ -102,6 +116,28 @@ function clearSession() {
   try {
     rmSync(sessionPath(), { force: true })
   } catch {}
+}
+
+function pluginStatePath() {
+  return join(app.getPath('userData'), PLUGIN_STATE_FILE)
+}
+
+function pluginPackageDir(code: string) {
+  return join(app.getPath('userData'), 'toolbox-plugins', normalizePluginCode(code))
+}
+
+function readPluginState(): Record<string, unknown> {
+  try {
+    const file = pluginStatePath()
+    if (!existsSync(file)) return {}
+    return JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>
+  } catch {
+    return {}
+  }
+}
+
+function writePluginState(state: Record<string, unknown>) {
+  writeFileSync(pluginStatePath(), JSON.stringify(state, null, 2), 'utf8')
 }
 
 async function refreshSession(session: AuthSession) {
@@ -188,6 +224,99 @@ async function sendAppRequest(payload: AppRequestPayload, retry = true) {
   }
 }
 
+function normalizePluginCode(code: string) {
+  const value = String(code || '').trim()
+  if (!/^[a-z][a-z0-9-]{1,78}$/.test(value)) {
+    throw new Error('插件编码不合法')
+  }
+  return value
+}
+
+function normalizePluginPackageUrl(value: string) {
+  const apiBase = apiBaseUrl()
+  const originBase = new URL(apiBase.origin)
+  const url = value.startsWith('/plugins/') ? new URL(value, originBase) : new URL(value)
+  if (url.protocol !== 'https:' && !(url.hostname === '127.0.0.1' || url.hostname === 'localhost')) {
+    throw new Error('插件包仅允许可信 HTTPS 或本地调试地址')
+  }
+  if (value.startsWith('/plugins/') && !url.pathname.startsWith('/plugins/')) {
+    throw new Error('插件包路径不在白名单内')
+  }
+  if (hasPathTraversal(url.pathname)) {
+    throw new Error('插件包路径不合法')
+  }
+  return url.toString()
+}
+
+function assertPackageChecksum(buffer: Buffer, checksum?: string) {
+  if (!checksum) {
+    return
+  }
+  const expected = checksum.replace(/^sha256:/i, '').toLowerCase()
+  const actual = createHash('sha256').update(buffer).digest('hex')
+  if (expected !== actual) {
+    throw new Error('插件包 checksum 校验失败')
+  }
+}
+
+async function installPluginUpdates(updates: PluginUpdatePayload[]) {
+  const result: Array<{ code: string; version: string; success: boolean; error?: string }> = []
+  const state = readPluginState()
+
+  for (const item of Array.isArray(updates) ? updates : []) {
+    try {
+      const code = normalizePluginCode(item.code)
+      const version = String(item.version || '').trim()
+      if (!version || !item.packageUrl) {
+        throw new Error('插件版本或下载地址为空')
+      }
+
+      const url = normalizePluginPackageUrl(item.packageUrl)
+      const response = await fetch(url)
+      if (!response.ok) {
+        throw new Error(`插件包下载失败：${response.status}`)
+      }
+
+      const buffer = Buffer.from(await response.arrayBuffer())
+      assertPackageChecksum(buffer, item.checksum)
+
+      const dir = pluginPackageDir(code)
+      mkdirSync(dir, { recursive: true })
+      const tempPath = join(dir, `${version}.zip.tmp`)
+      const finalPath = join(dir, `${version}.zip`)
+      writeFileSync(tempPath, buffer)
+      rmSync(finalPath, { force: true })
+      renameSync(tempPath, finalPath)
+
+      state[code] = {
+        version,
+        packageUrl: url,
+        checksum: item.checksum,
+        installedAt: new Date().toISOString()
+      }
+      result.push({ code, version, success: true })
+    } catch (err) {
+      result.push({
+        code: item?.code || '',
+        version: item?.version || '',
+        success: false,
+        error: (err as Error).message
+      })
+    }
+  }
+
+  writePluginState(state)
+  return { success: true, data: { list: result } }
+}
+
+async function sendPluginRequest(payload: AppRequestPayload & { pluginCode?: string }) {
+  const pathUrl = new URL(payload.path || '', 'http://brmtool.local')
+  if (!isAllowedPluginPath(pathUrl.pathname) || hasPathTraversal(payload.path)) {
+    return { success: false, error: '插件请求路径不在白名单内' }
+  }
+  return sendAppRequest(payload)
+}
+
 export function registerToolboxHandlers(): void {
   ipcMain.handle('app:request', async (_event, payload: AppRequestPayload) => sendAppRequest(payload))
   ipcMain.handle('toolbox:request', async (_event, payload: AppRequestPayload) => sendAppRequest(payload))
@@ -205,6 +334,30 @@ export function registerToolboxHandlers(): void {
     try {
       await shell.openExternal(normalizeUrl(url))
       return { success: true }
+    } catch (err) {
+      return { success: false, error: (err as Error).message }
+    }
+  })
+
+  ipcMain.handle('plugin:get-user', () => {
+    const session = readSession()
+    return { success: true, data: session.user || null }
+  })
+
+  ipcMain.handle('plugin:request', async (_event, payload: AppRequestPayload & { pluginCode?: string }) => {
+    try {
+      if (payload.pluginCode) {
+        normalizePluginCode(payload.pluginCode)
+      }
+      return await sendPluginRequest(payload)
+    } catch (err) {
+      return { success: false, error: (err as Error).message }
+    }
+  })
+
+  ipcMain.handle('plugin:install-updates', async (_event, updates: PluginUpdatePayload[]) => {
+    try {
+      return await installPluginUpdates(updates)
     } catch (err) {
       return { success: false, error: (err as Error).message }
     }

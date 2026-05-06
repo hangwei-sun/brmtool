@@ -29,6 +29,13 @@ export default (): ModuleConfig => {
 			},
 			{
 				meta: {
+					label: '插件市场'
+				},
+				path: '/toolbox/plugin',
+				component: () => import('./views/plugin.vue')
+			},
+			{
+				meta: {
 					label: '使用建议'
 				},
 				path: '/toolbox/feedback',

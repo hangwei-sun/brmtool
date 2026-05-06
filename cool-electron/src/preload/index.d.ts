@@ -99,6 +99,26 @@ export interface UpdateResult {
   error?: string
 }
 
+export interface PluginUpdateInstallItem {
+  code: string
+  version: string
+  packageUrl: string
+  checksum?: string
+}
+
+export interface PluginUpdateInstallResult {
+  success: boolean
+  data?: {
+    list: Array<{
+      code: string
+      version: string
+      success: boolean
+      error?: string
+    }>
+  }
+  error?: string
+}
+
 /** 暴露给 Renderer 的完整 IPC API 类型定义 */
 export interface IpcApi {
   // IPC 通信模块
@@ -128,6 +148,8 @@ export interface IpcApi {
   getUpdateStatus: () => Promise<UpdateResult>
   onUpdateStatus: (callback: (data: UpdateStatus) => void) => void
   offUpdateStatus: () => void
+  // 插件模块
+  installPluginUpdates: (updates: PluginUpdateInstallItem[]) => Promise<PluginUpdateInstallResult>
 }
 
 declare global {

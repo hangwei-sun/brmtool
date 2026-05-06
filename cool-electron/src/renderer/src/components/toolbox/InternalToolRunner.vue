@@ -5,6 +5,7 @@ import Base64Tool from './tools/Base64Tool.vue'
 import FeedbackBoardTool from './tools/FeedbackBoardTool.vue'
 import JsonTool from './tools/JsonTool.vue'
 import MarkdownTool from './tools/MarkdownTool.vue'
+import PluginSandboxTool from './tools/PluginSandboxTool.vue'
 import TextDedupeTool from './tools/TextDedupeTool.vue'
 import TimestampTool from './tools/TimestampTool.vue'
 import UrlTool from './tools/UrlTool.vue'
@@ -31,6 +32,12 @@ const toolComponents = {
 <template>
   <ExternalWebRunner
     v-if="tool.type === 'external_link' && tool.openMode === 'embedded_webview'"
+    :tool="tool"
+    @close="emit('back')"
+  />
+
+  <PluginSandboxTool
+    v-else-if="tool.type === 'local_plugin' && tool.entry.startsWith('plugin:')"
     :tool="tool"
     @close="emit('back')"
   />

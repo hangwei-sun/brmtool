@@ -7,7 +7,15 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin(), bytecodePlugin()]
   },
   preload: {
-    plugins: [externalizeDepsPlugin(), bytecodePlugin()]
+    plugins: [externalizeDepsPlugin(), bytecodePlugin()],
+    build: {
+      rollupOptions: {
+        input: {
+          index: resolve(__dirname, 'src/preload/index.ts'),
+          plugin: resolve(__dirname, 'src/preload/plugin.ts')
+        }
+      }
+    }
   },
   renderer: {
     resolve: {

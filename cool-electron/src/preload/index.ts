@@ -80,7 +80,13 @@ const api = {
   /** 取消监听更新状态 */
   offUpdateStatus: () => {
     ipcRenderer.removeAllListeners('updater:status')
-  }
+  },
+
+  // ── 插件模块（Renderer → Main）────────────────────────────────────
+  /** 下载并校验插件更新包 */
+  installPluginUpdates: (
+    updates: Array<{ code: string; version: string; packageUrl: string; checksum?: string }>
+  ) => ipcRenderer.invoke('plugin:install-updates', updates)
 }
 
 if (process.contextIsolated) {

@@ -41,6 +41,16 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
+  mainWindow.webContents.on('will-attach-webview', (_event, webPreferences, params) => {
+    webPreferences.nodeIntegration = false
+    webPreferences.contextIsolation = true
+    webPreferences.sandbox = true
+
+    if (params.partition?.startsWith('persist:brmtool-plugin')) {
+      webPreferences.preload = join(__dirname, '../preload/plugin.js')
+    }
+  })
+
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {

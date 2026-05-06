@@ -51,6 +51,18 @@ export const pPluginPath = () => {
 };
 
 /**
+ * 工具箱插件静态目录
+ * @returns
+ */
+export const pToolboxPluginPath = () => {
+  const pluginPath = path.join(pDataPath(), 'toolbox-plugins');
+  if (!fs.existsSync(pluginPath)) {
+    fs.mkdirSync(pluginPath, { recursive: true });
+  }
+  return pluginPath;
+};
+
+/**
  * sqlite 数据库文件
  */
 export const pSqlitePath = () => {

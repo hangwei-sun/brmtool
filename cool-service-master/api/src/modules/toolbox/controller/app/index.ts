@@ -15,6 +15,7 @@ import {
 } from '@cool-midway/core';
 import { ToolboxAppService } from '../../service/app';
 import { ToolboxFeedbackService } from '../../service/feedback';
+import { ToolboxPluginService } from '../../service/plugin';
 
 /**
  * 工具箱-桌面端接口
@@ -30,6 +31,9 @@ export class AppToolboxController extends BaseController {
 
   @Inject()
   toolboxFeedbackService: ToolboxFeedbackService;
+
+  @Inject()
+  toolboxPluginService: ToolboxPluginService;
 
   @CoolTag(TagTypes.IGNORE_TOKEN)
   @Get('/home', { summary: '工具箱首页数据' })
@@ -104,6 +108,18 @@ export class AppToolboxController extends BaseController {
     return this.ok(
       await this.toolboxFeedbackService.submit(this.currentUserId(), body)
     );
+  }
+
+  @CoolTag(TagTypes.IGNORE_TOKEN)
+  @Get('/plugins/market', { summary: '插件市场列表' })
+  async pluginMarket() {
+    return this.ok(await this.toolboxPluginService.market());
+  }
+
+  @CoolTag(TagTypes.IGNORE_TOKEN)
+  @Post('/plugins/checkUpdates', { summary: '检查插件更新' })
+  async pluginUpdates(@Body('installed') installed) {
+    return this.ok(await this.toolboxPluginService.checkUpdates(installed));
   }
 
   private currentUserId() {

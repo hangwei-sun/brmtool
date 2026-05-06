@@ -9,8 +9,10 @@ import bannerUrl from '../assets/toolbox-banner.svg'
 import {
   compareToolSort,
   defaultHome,
+  fetchPluginUpdates,
   fetchToolboxHome,
   fetchToolboxTools,
+  installPluginUpdates,
   isTruthy,
   mergeTools,
   normalizeHome,
@@ -217,6 +219,7 @@ async function loadHome() {
     applyHome(home)
     writeCachedHome(home)
     syncStatus.value = '已同步后端数据'
+    void checkPluginUpdates()
   } catch {
     if (!readCachedHome()) {
       applyHome(defaultHome)
@@ -226,6 +229,34 @@ async function loadHome() {
     }
   } finally {
     isSyncing.value = false
+  }
+}
+
+async function checkPluginUpdates() {
+  const installed = tools.value
+    .filter((tool) => tool.type === 'local_plugin' && tool.entry.startsWith('plugin:'))
+    .map((tool) => ({
+      code: tool.entry.replace(/^plugin:/, ''),
+      version: tool.version || String(tool.config?.plugin?.version || '')
+    }))
+
+  if (!installed.length) {
+    return
+  }
+
+  try {
+    const updates = await fetchPluginUpdates(installed)
+    if (updates.length > 0) {
+      const installedUpdates = await installPluginUpdates(updates)
+      const successCount = installedUpdates.filter((item) => item.success).length
+      const failedCount = installedUpdates.length - successCount
+      syncStatus.value =
+        failedCount > 0
+          ? `插件更新 ${successCount} 个完成，${failedCount} 个失败`
+          : `插件更新包已校验 ${successCount} 个`
+    }
+  } catch {
+    // 插件更新检查不能影响工具箱主流程。
   }
 }
 

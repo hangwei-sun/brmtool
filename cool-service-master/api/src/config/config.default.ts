@@ -2,7 +2,7 @@ import { CoolConfig } from '@cool-midway/core';
 import { MidwayConfig } from '@midwayjs/core';
 import { CoolCacheStore } from '@cool-midway/core';
 import * as path from 'path';
-import { pCachePath, pUploadPath } from '../comm/path';
+import { pCachePath, pToolboxPluginPath, pUploadPath } from '../comm/path';
 import { availablePort } from '../comm/port';
 
 // redis缓存
@@ -29,6 +29,10 @@ export default {
       static: {
         prefix: '/upload',
         dir: pUploadPath(),
+      },
+      toolboxPlugins: {
+        prefix: '/plugins',
+        dir: pToolboxPluginPath(),
       },
     },
   },
