@@ -1,69 +1,92 @@
-# brmtool
+# 数智工具箱 brmtool
 
-工作工具箱项目集合。当前仓库以 COOL Admin / COOL UNI / Electron 基座为核心，包含后端 API、后台管理端、移动端/小程序端和桌面端示例工程，适合作为业务管理系统、跨端应用和桌面工具的开发起点。
+数智工具箱是一个“后台可管理、桌面端可使用、移动端可浏览”的综合工具平台。项目基于 COOL Admin、Electron、UniApp 组合开发，当前已覆盖工具管理、桌面工具箱、用户登录、消息通知、插件市场、学习中心、AI 工作台、软件下载页和桌面端在线更新。
 
-## 项目组成
+生产域名规划为：`https://tool.baotounews.cn`
+
+## 项目能力
+
+- 后台管理：工具分类、工具管理、使用统计、消息通知、留言板、学习分类、学习入库、插件市场、AI 模型与模板管理。
+- 桌面端：科技风工具箱首页、分类/标签筛选、搜索、收藏、内嵌 WebView、内置工具、本地插件、消息通知、个人中心、在线更新。
+- AI 工作台：DeepSeek 文本对话、流式输出、会话历史、模板创作、火山引擎图片/音频/视频生成接口代理。
+- 插件体系：后台自建插件市场、插件包上传/解包/checksum 校验、Web 沙箱运行、插件更新检查。
+- 学习中心：后台维护学习分类和视频内容，桌面端按分类、推荐、热门展示学习内容。
+- 移动端 H5/PWA：浏览、搜索、收藏、消息、打开 Web 工具，桌面专属插件在移动端标记为仅桌面可用。
+- 上线交付：同域名分路径部署、公开下载页、macOS/Windows 安装包、`electron-updater` 在线更新链路。
+
+## 项目结构
 
 ```text
 brmtool/
-├── cool-service-master/     # 后台服务与管理端
-│   ├── api/                 # Node.js + Midway + TypeScript 后端 API
-│   ├── vue/                 # Vue 3 + Element Plus 后台管理端
-│   └── start-dev.js         # 一键启动 api + vue 的开发脚本
-├── cool-uni-8.x/            # UniApp + Vue 3 移动端/小程序端
-├── cool-electron/           # Electron + Vue 3 + TypeScript 桌面端
-└── README.md                # 仓库总览
+├── cool-service-master/
+│   ├── api/                 # Midway.js + COOL Admin + TypeORM 后端
+│   ├── vue/                 # Vue 3 + Element Plus 管理端和 /download 下载页
+│   └── start-dev.js         # 本地一键启动 api + vue
+├── cool-electron/           # Electron + Vue 3 桌面端
+├── cool-uni-8.x/            # UniApp H5/PWA 移动端
+├── docs/                    # 部署、插件、运营等项目文档
+├── scripts/                 # 发布配置和检查脚本
+├── agent.md                 # AI/工程师协作开发手册
+├── tool.md                  # 宝塔部署小白完整方案
+└── README.md                # 项目总览
 ```
 
 ## 技术栈
 
-| 子项目 | 主要技术 | 说明 |
+| 子项目 | 技术 | 说明 |
 | --- | --- | --- |
-| `cool-service-master/api` | Node.js、Midway、TypeScript、TypeORM、SQLite/MySQL | 后端 API、权限、用户、字典、任务、插件、文件空间等模块 |
-| `cool-service-master/vue` | Vue 3、Vite、Element Plus、Pinia、Vue Router、Tailwind CSS | 后台管理端，包含 CRUD、菜单权限、多语言、开发工具等能力 |
-| `cool-uni-8.x` | UniApp、Vue 3、Pinia、Vite、cool-ui | 移动端/小程序端脚手架，内置登录、用户中心、组件示例和请求封装 |
-| `cool-electron` | Electron、electron-vite、Vue 3、TypeScript、Naive UI | 桌面端基座，演示 IPC、文件读取、系统通知和主进程 HTTP 请求 |
+| `cool-service-master/api` | Node.js、Midway.js、TypeScript、TypeORM、MySQL、COOL Admin | 后端 API、APP 接口、后台 CRUD、AI/插件/学习/消息模块 |
+| `cool-service-master/vue` | Vue 3、Vite、Element Plus、Pinia、COOL CRUD | 后台管理端和公开下载页 |
+| `cool-electron` | Electron、electron-vite、Vue 3、TypeScript、Naive UI、electron-updater | 桌面端工具箱、WebView、插件沙箱、在线更新 |
+| `cool-uni-8.x` | UniApp、Vue 3、Pinia、Vite、cool-ui | H5/PWA 移动端入口 |
 
-## 功能概览
+## 核心模块
 
-### 后台服务与管理端
+### 工具箱
 
-`cool-service-master` 是 COOL Admin Node 版工程，包含后端 `api` 和管理前端 `vue`。
-
-- 后端默认使用 SQLite，本地数据库文件为 `cool-service-master/api/cool.sqlite`。
-- 本地开发配置入口：`cool-service-master/api/src/config/config.local.ts`。
-- 管理端本地代理入口：`cool-service-master/vue/src/config/proxy.ts`。
-- 默认后端端口：`8001`。
-- 默认管理端开发地址：`http://localhost:9000/`。
-- 内置模块包括：基础权限、用户、字典、任务、插件、回收站、文件空间、Swagger、Demo 等。
-
-### 移动端 / 小程序端
-
-`cool-uni-8.x` 是 COOL UNI 8.x 脚手架。
-
-- 页面入口：`cool-uni-8.x/pages.json`。
-- 应用配置：`cool-uni-8.x/config/index.ts`。
-- 开发/生产代理配置：`cool-uni-8.x/config/dev.ts`、`cool-uni-8.x/config/prod.ts`、`cool-uni-8.x/config/proxy.ts`。
-- 内置首页、个人中心、登录、验证码、设置、关于页，以及 `cool-ui` 组件演示页面。
-- 封装了请求、路由、缓存、上传、全局事件、多语言等基础能力。
+- 工具类型：`external_link`、`internal_web`、`local_plugin`。
+- 打开方式：外部浏览器、Electron 新窗口、内嵌 WebView、内部路由、本地插件。
+- 排序规则：后台和桌面端均按 `sort` 数字倒序展示，数字越大越靠前。
+- 权限规则：工具可配置公开访问或登录后访问；未登录用户只能使用公开工具。
 
 ### 桌面端
 
-`cool-electron` 是 Electron 桌面应用基座。
+- 首页、导航、工具、智能、学习等主要页面已接入后台数据。
+- 内嵌 WebView 支持返回、刷新、返回首页、关闭和地址栏。
+- 左侧菜单支持折叠，桌面端默认窗口为 `1280x720`。
+- 在线更新使用 `electron-updater + electron-builder generic provider`，更新包目录为 `/updates/desktop`。
 
-- 主进程入口：`cool-electron/src/main/index.ts`。
-- 预加载入口：`cool-electron/src/preload/index.ts`。
-- 渲染进程入口：`cool-electron/src/renderer/src/main.ts`。
-- Main 进程按模块拆分在 `cool-electron/src/main/<module>/` 下。
-- 模块文档位于 `cool-electron/docs/`。
-- 当前已包含 IPC、文件系统、系统通知、HTTP 请求等模块。
+### AI 工作台
+
+- 后端 `ai` 模块保存模型配置、模板、会话、消息和生成记录。
+- API Key 可在后台 AI 模型管理中配置；接口不回显明文。
+- DeepSeek 文本模型支持流式对话和会话历史。
+- 火山引擎图片、音频、视频生成通过后端代理访问，模型 ID、Base URL、接口路径可后台维护。
+
+### 插件市场
+
+- 管理员上传插件 zip 后，后端解包并校验 checksum。
+- 插件发布后可自动关联为 `local_plugin` 工具。
+- Electron 插件运行使用 Web 沙箱：禁用 Node、本机命令、任意文件系统和非白名单 IPC。
+
+### 学习中心
+
+- 后台维护学习分类和学习内容。
+- 学习内容支持封面、视频地址、上传文件、推荐、热门、排序和状态。
+- 桌面端学习页按后台分类与内容实时展示。
 
 ## 环境要求
 
-- Node.js：后端要求 `>= 18.0.0`，UniApp 子项目要求 `>= 16`，建议统一使用 Node.js 18 或 20。
-- 包管理器：推荐使用 `pnpm`。部分子项目也保留了 `package-lock.json`，但当前工程更适合使用 `pnpm-lock.yaml` 对齐依赖。
-- 桌面端构建需要对应系统的 Electron 构建环境。
-- UniApp 如需运行到 App/小程序，可配合 HBuilderX 或对应平台工具链。
+- Node.js：建议 `22.x`，最低 `18.x`。
+- 包管理器：`pnpm`。
+- 数据库：MySQL 5.7/8.0，推荐 8.0。
+- 桌面端打包：macOS 安装包建议在 macOS 构建，Windows 安装包建议在 Windows 或 GitHub Actions 构建。
+
+本地开发数据库：
+
+```sql
+CREATE DATABASE brmtool DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
 
 ## 快速开始
 
@@ -74,23 +97,16 @@ git clone git@github.com:hangwei-sun/brmtool.git
 cd brmtool
 ```
 
-### 2. 启动后台服务与管理端
+### 2. 启动后端和管理端
 
-推荐使用内置启动脚本：
+推荐使用一键脚本：
 
 ```bash
 cd cool-service-master
 node start-dev.js
 ```
 
-该脚本会：
-
-- 检查并安装 `pnpm`。
-- 分别检查 `api` 和 `vue` 依赖。
-- 先启动后端 API，再启动管理端。
-- 管理端启动成功后自动打开浏览器。
-
-也可以手动启动：
+也可以分别启动：
 
 ```bash
 cd cool-service-master/api
@@ -104,22 +120,12 @@ pnpm install
 pnpm dev
 ```
 
-启动后访问：
+默认地址：
 
-- API：`http://localhost:8001/`
-- 管理端：`http://localhost:9000/`
+- 后端：`http://127.0.0.1:8001`
+- 管理端：`http://localhost:9000`
 
-### 3. 启动移动端 / 小程序端
-
-```bash
-cd cool-uni-8.x
-pnpm install
-pnpm dev
-```
-
-如需运行到具体平台，请结合 UniApp / HBuilderX 的平台运行能力配置。
-
-### 4. 启动桌面端
+### 3. 启动桌面端
 
 ```bash
 cd cool-electron
@@ -127,83 +133,93 @@ pnpm install
 pnpm dev
 ```
 
-构建安装包：
+### 4. 启动移动端 H5
 
 ```bash
-pnpm build:mac
-pnpm build:win
-pnpm build:linux
+cd cool-uni-8.x
+pnpm install
+pnpm dev
 ```
 
-如果启动时报 Electron 二进制缺失，可在 `cool-electron` 目录执行：
+## 常用命令
+
+### 后端
 
 ```bash
-node node_modules/electron/install.js
+cd cool-service-master/api
+pnpm dev
+pnpm build
+pnpm lint
+pnpm start
 ```
 
-网络不稳定时可使用镜像：
+### 管理端
 
 ```bash
-ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ node node_modules/electron/install.js
+cd cool-service-master/vue
+pnpm dev
+pnpm type-check
+pnpm build
 ```
 
-## 常用脚本
+### 桌面端
 
-### `cool-service-master/api`
+```bash
+cd cool-electron
+pnpm dev
+pnpm typecheck
+pnpm build
+pnpm build:mac --publish never
+pnpm build:win --publish never
+```
 
-| 命令 | 说明 |
-| --- | --- |
-| `pnpm dev` | 启动后端开发服务 |
-| `pnpm build` | 构建后端 |
-| `pnpm test` | 运行测试 |
-| `pnpm lint` | 代码检查 |
-| `pnpm start` | 生产模式启动 |
+### 移动端
 
-### `cool-service-master/vue`
+```bash
+cd cool-uni-8.x
+pnpm dev
+pnpm exec tsc --noEmit
+```
 
-| 命令 | 说明 |
-| --- | --- |
-| `pnpm dev` | 启动管理端开发服务 |
-| `pnpm build` | 构建管理端 |
-| `pnpm preview` | 预览构建产物 |
-| `pnpm type-check` | 类型检查 |
-| `pnpm lint` | 代码检查与修复 |
+## 上线部署
 
-### `cool-electron`
+当前推荐宝塔/1Panel 单域名分路径部署：
 
-| 命令 | 说明 |
-| --- | --- |
-| `pnpm dev` | 启动 Electron 开发模式 |
-| `pnpm build` | 类型检查并构建 |
-| `pnpm build:mac` | 构建 macOS 安装包 |
-| `pnpm build:win` | 构建 Windows 安装包 |
-| `pnpm build:linux` | 构建 Linux 安装包 |
-| `pnpm typecheck` | Node 与 Web 类型检查 |
+```text
+https://tool.baotounews.cn/                  # 管理端静态资源
+https://tool.baotounews.cn/download          # 桌面端软件下载页
+https://tool.baotounews.cn/api               # 后端接口反代
+https://tool.baotounews.cn/upload            # 上传文件访问
+https://tool.baotounews.cn/plugins           # 插件静态文件访问
+https://tool.baotounews.cn/updates/desktop   # 桌面端更新包
+```
 
-## 重要配置
+详细小白部署步骤见 [tool.md](/tool.md)。
 
-| 文件 | 说明 |
-| --- | --- |
-| `cool-service-master/api/src/config/config.local.ts` | 后端本地数据库、EPS、初始化菜单/数据等配置 |
-| `cool-service-master/api/src/config/config.prod.ts` | 后端生产环境配置 |
-| `cool-service-master/vue/src/config/proxy.ts` | 管理端开发代理配置 |
-| `cool-uni-8.x/config/index.ts` | UniApp 应用名称、登录页、微信配置、请求配置入口 |
-| `cool-uni-8.x/config/proxy.ts` | UniApp H5 开发代理配置 |
-| `cool-electron/electron-builder.yml` | Electron 打包配置 |
+生产配置要点：
 
-## 开发约定
+- 后端生产环境读取 `cool-service-master/api/.env.production`，真实密钥和数据库密码只放服务器，不提交 Git。
+- 管理端生产接口统一走 `/api`。
+- Electron API base 指向 `https://tool.baotounews.cn/api`。
+- Electron 更新包需要同时上传安装包、`latest.yml`、`latest-mac.yml` 和 blockmap。
 
-- 后端业务优先放入 `cool-service-master/api/src/modules/<module>/`。
-- 管理端业务模块放入 `cool-service-master/vue/src/modules/<module>/`。
-- UniApp 页面放入 `cool-uni-8.x/pages/`，公共能力放入 `cool-uni-8.x/cool/`。
-- Electron Main 进程功能按模块放入 `cool-electron/src/main/<module>/`，并在 `cool-electron/src/main/index.ts` 统一注册。
-- Electron 新增 Main 模块时，同步在 `cool-electron/docs/<module>.md` 增加说明文档。
-- 本地生成的 `node_modules`、构建产物、日志和系统文件不应提交到仓库。
+## 重要文档
 
-## 参考文档
+- [AI/工程师开发手册](agent.md)
+- [宝塔部署完整方案](tool.md)
+- [1Panel/宝塔部署说明](docs/deploy/1panel-baota.md)
+- [P14 运营增强路线图](docs/operations/p14-roadmap.md)
 
-- [COOL Admin Node 文档](https://node.cool-admin.com/src/introduce/)
-- [COOL Admin Vue 文档](https://vue.cool-admin.com/src/guide/quick.html)
-- [COOL UNI 文档](https://uni-docs.cool-js.com/)
-- [electron-vite 文档](https://electron-vite.org/)
-- [Naive UI 文档](https://www.naiveui.com/)
+## 安全约束
+
+- 不提交真实 `.env`、数据库密码、API Key、签名证书、发布 token。
+- AI 模型密钥优先通过后台模型管理维护，接口不回显明文。
+- Electron Renderer 不直接访问任意后端地址，统一走 Main/Preload 白名单 API。
+- 第三方插件只允许 Web 沙箱运行，不开放 Node、本机命令、子进程或任意文件系统。
+- 生产环境保持数据库自动同步关闭，正式上线前通过备份和脚本管理 schema。
+
+## 当前阶段
+
+- MVP 核心能力已完成。
+- 当前主线：P13 内测上线交付、P15-P18 插件/移动端能力收敛、P19 AI 工作台与多模型生成体验收口。
+- 下一步重点：宝塔生产部署验证、Windows unsigned 安装包、在线更新实测、学习入库显示问题回归验证、AI 生成模型后台配置完善。

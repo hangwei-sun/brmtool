@@ -5,14 +5,14 @@
 ## 1. 当前目标与进度
 
 ### 产品目标
-- 桌面端：工具浏览、搜索、收藏、打开、最近使用、离线缓存。
-- 后台端：管理工具分类、工具信息、入口地址、排序、状态、推荐位、基础统计、用户、消息。
-- 后端：提供工具配置、收藏、使用记录、统计、登录鉴权、站内消息接口。
+- 桌面端：工具浏览、搜索、收藏、内嵌 WebView、本地插件、学习中心、AI 工作台、消息通知、在线更新。
+- 后台端：管理工具、插件、学习内容、AI 模型/模板、用户、消息、留言和统计。
+- 后端：提供工具配置、收藏、使用记录、统计、登录鉴权、站内消息、插件市场、学习中心和 AI 代理接口。
 
 ### MVP 范围
-- 核心能力已完成：工具管理、桌面首页、搜索、收藏、打开工具、使用统计、本地缓存、登录权限、消息通知、留言板插件、内嵌 WebView、软件下载页、桌面端在线更新。
+- 核心能力已完成：工具管理、桌面首页、搜索、收藏、打开工具、使用统计、本地缓存、登录权限、消息通知、留言板插件、内嵌 WebView、软件下载页、桌面端在线更新、学习中心、AI 工作台。
 - 支持工具类型：`external_link` 外部链接、`internal_web` 内置 Web 工具、`local_plugin` 本地插件；首批内置工具已完成 6 个。
-- 当前主线：先收口 `P19 智能页与 DeepSeek V4`，并继续推进 `P13 上线交付` 与 `P15-P18 插件/移动端能力`。
+- 当前主线：先收口 `P19 AI 工作台与多模型生成`，并继续推进 `P13 上线交付` 与 `P15-P18 插件/移动端能力`。
 - 暂缓：远程插件市场、Node 插件、本机命令、任意文件系统访问、原生移动端、小程序。
 
 ### 进度跟踪
@@ -22,7 +22,7 @@
 | 账号消息与桌面体验 | 已完成 | 登录权限、消息通知、留言板、WebView、下载页、在线更新 |
 | P13 上线交付 | 进行中 | 生产部署、Windows/CI 打包、更新链路验证 |
 | P15-P18 插件与移动端 | 进行中 | 插件市场、Web 沙箱、插件更新、H5/PWA |
-| P19 智能页与 DeepSeek V4 | 进行中 | AI Workspace、DeepSeek 文本对话、模型配置、模板管理 |
+| P19 AI 工作台与多模型生成 | 进行中 | AI Workspace、DeepSeek 文本对话、火山引擎生图/音频/视频、模型配置、模板管理 |
 
 ## 2. 项目结构与技术栈
 
@@ -33,6 +33,9 @@ brmtool/
 │   └── vue/   # Vue 3 + Element Plus + COOL Admin 管理端
 ├── cool-electron/  # Electron + electron-vite + Vue 3 + Naive UI 桌面端
 ├── cool-uni-8.x/   # UniApp，H5/PWA 移动端入口
+├── docs/           # 部署、插件、运营文档
+├── scripts/        # 发布配置和检查脚本
+├── tool.md         # 宝塔部署小白完整方案
 └── agent.md        # 本文件
 ```
 
@@ -119,8 +122,13 @@ node start-dev.js
 - `ToolboxUsageEntity`：`userId`、`toolId`、`toolName`、`action=open`、`clientType=electron`、`createdAt`。
 - `ToolboxFeedbackEntity`：留言板插件数据，保存用户建议、联系方式、处理状态和回复内容。
 - `ToolboxPluginEntity`：工具箱插件市场数据，保存插件清单、版本、权限、包地址、checksum、审核/发布/安装状态。
+- `ToolboxStudyCategoryEntity`：学习分类，保存分类名称、编码、排序、状态和备注。
+- `ToolboxStudyVideoEntity`：学习入库内容，保存标题、分类、封面、视频地址/上传文件、简介、作者、推荐/热门、排序和状态。
 - `MessageInfoEntity`：保存标题、内容、等级、目标范围、跳转动作、发布时间、状态。
 - `MessageReadEntity`：保存 `messageId + userId` 已读状态。
+- `AiModelEntity`：AI 模型配置，保存 provider、capability、modelId、API Key 密文/掩码、Base URL、接口路径、排序和状态。
+- `AiTemplateEntity`：AI 模板卡片，保存标题、分类、描述、Prompt、标签、排序和状态。
+- `AiConversationEntity` / `AiMessageEntity` / `AiGenerationEntity`：保存 AI 会话、消息、生成记录、错误状态和 usage。
 
 ### 接口
 - 管理端：分类 CRUD、工具 CRUD、启停/推荐/热门/最新/排序、使用统计。
@@ -129,6 +137,18 @@ node start-dev.js
 - 插件市场：
   - `GET /app/toolbox/plugins/market`
   - `POST /app/toolbox/plugins/checkUpdates`
+- 学习中心：
+  - `GET /app/toolbox/study/home`
+  - `GET /app/toolbox/study/videos`
+  - `GET /app/toolbox/study/videos/:id`
+- AI 工作台：
+  - `GET /app/ai/models`
+  - `GET /app/ai/templates`
+  - `GET /app/ai/conversations`
+  - `GET /app/ai/conversations/:id`
+  - `POST /app/ai/conversations`
+  - `POST /app/ai/chat`
+  - `POST /app/ai/generate`
 - 消息：
   - `GET /app/message/list`
   - `GET /app/message/unreadCount`
@@ -148,6 +168,8 @@ node start-dev.js
 - Electron Main 请求后端必须走白名单 IPC，允许 `/app/toolbox/**`、`/app/user/**`、`/app/message/**`，并自动注入 `Authorization`。
 - 未登录用户只能打开公开工具；受保护工具必须由后端和桌面端同时拦截。
 - 工具排序统一按 `sort` 数字倒序展示，数字越大越靠前；后台工具列表和桌面端工具列表保持一致。
+- AI 模型 API Key 可后台录入和修改，但接口不回显明文；环境变量仅作为服务器兜底配置。
+- 上传文件、插件静态资源和学习封面/视频必须经 `/upload` 或 `/plugins` 明确反代访问，不能依赖管理端静态目录。
 
 ## 7. 管理端设计摘要
 
@@ -162,12 +184,17 @@ node start-dev.js
 - 表单要求：类型和打开方式用下拉；`config` 做 JSON 格式校验；`entry` 根据类型展示提示。
 - 工具表单新增访问权限：公开访问、登录后访问。
 - 插件市场：管理员维护插件包、版本、权限、审核状态、发布状态；发布后自动关联为 `local_plugin` 工具。
+- 学习分类/学习入库：后台维护学习中心分类和视频内容；分类可联动选择，封面/视频支持输入 URL 或本地上传。
+- AI 模型管理：维护 DeepSeek 和火山引擎模型，支持 API Key、Base URL、接口路径、能力类型、默认模型、排序和状态。
+- AI 模板管理：维护桌面端智能页模板卡片，桌面端按后台排序展示。
 
 ## 8. Electron 桌面端设计摘要
 
 ### 页面
 - 首页：顶部搜索、欢迎 banner、我的收藏、推荐工具、今日使用、最近使用。
 - 工具列表：分类筛选、关键词搜索、最新/最热/收藏最多排序。
+- 学习中心：学习分类、标签筛选、推荐/热门内容、学习详情页。
+- AI 工作台：独立流式对话主界面、历史会话侧栏、模型切换、Thinking 开关、模板卡片、图片/音频/视频生成入口。
 - 工具运行页：承载内置工具或可嵌入工具。
 - 我的区域：未登录显示登录入口；已登录显示用户信息、退出登录、同步状态。
 - 消息通知：顶部通知入口展示未读数，消息抽屉展示列表和详情；重要消息触发系统通知。
@@ -183,6 +210,7 @@ node start-dev.js
 - 点击受保护工具时，未登录先弹登录框；登录成功后继续打开原工具。
 - 消息默认 60 秒轮询一次；新重要消息调用现有 `notification:send`。
 - 启动后检查已关联插件版本；插件更新不影响主程序在线更新链路。
+- 智能页请求统一走 Main/Preload 白名单 `/app/ai/**`，不在 Renderer 暴露第三方模型地址和密钥。
 
 ### 打开方式
 - `external_browser`：主进程 `shell.openExternal`。
@@ -190,13 +218,15 @@ node start-dev.js
 - `embedded_webview`：桌面端内嵌 WebView 打开，提供返回、刷新、返回首页、关闭和地址栏。
 - `internal_route`：Renderer 内部路由。
 - `local_plugin + plugin:<code>`：Electron WebView 沙箱运行；`nodeIntegration=no`、`contextIsolation=yes`、`sandbox=yes`，只暴露 `window.brmtoolPlugin` 受限 API。
+- `AI generation`：文本、图片、音频、视频生成都经后端代理；桌面端只展示任务状态、结果 URL 和错误提示。
 
 ## 9. 分阶段实施清单
 
 ### 历史完成摘要
 - 基础 MVP 已完成：本机 MySQL、`toolbox` 后端模块、分类/工具/统计后台、Electron 首页、工具列表、缓存、收藏、使用记录、6 个内置工具和基础验证。
 - 账号消息与桌面体验已完成：APP 用户登录、工具级权限、token 注入、消息通知、留言板插件、内嵌 WebView、侧栏折叠、软件下载页和桌面端在线更新。
-- 上线基础已完成：生产 env 示例、Nginx/1Panel/宝塔部署文档、域名 `tool.baotounews.cn` 配置脚本、发布检查脚本和桌面端 CI 打包工作流。
+- 学习与 AI 已完成主链路：学习分类/学习入库后台、桌面端学习中心、AI 模型/模板后台、桌面端 AI 工作台、DeepSeek 文本流式对话、火山引擎生成代理。
+- 上线基础已完成：生产 env 示例、Nginx/1Panel/宝塔部署文档、`tool.md` 小白部署方案、域名 `tool.baotounews.cn` 配置脚本、发布检查脚本和桌面端 CI 打包工作流。
 
 ### P13 上线交付收敛
 - 目标：把已完成 MVP 从本地开发态收敛为可内测上线的发布链路。
@@ -259,14 +289,15 @@ node start-dev.js
 - [x] H5 登录态拦截、收藏同步、消息列表/未读数、基础 manifest 和离线提示已完成。
 - [ ] H5/PWA service worker 离线缓存策略、移动端空状态和弱网体验继续完善。
 
-### P19 智能页与 DeepSeek V4
-- 目标：将桌面端“智能”分类改造成独立 AI 工作台，首版接入 DeepSeek V4 文本模型。
+### P19 AI 工作台与多模型生成
+- 目标：将桌面端“智能”分类改造成独立 AI 工作台，首版文本对话接入 DeepSeek，图片/音频/视频生成接入火山引擎能力。
 - [x] 后端新增 `ai` 模块：模型配置、模板、会话、消息实体与 APP 接口。
 - [x] DeepSeek API Key 支持后台模型管理添加/修改，接口不回显明文；`BRMTOOL_DEEPSEEK_API_KEY` 仅作为服务器环境变量兜底。
 - [x] 支持 `deepseek-v4-pro` / `deepseek-v4-flash` 模型配置和桌面端切换。
 - [x] Electron 新增 AI Workspace：Prompt 创作框、能力卡片、模板发现、历史会话和流式输出。
 - [x] 管理端新增 AI 模型管理和模板管理。
 - [x] 生图、音乐/语音、视频生成接口代理已接入火山引擎能力；Seedream / Seedance / 音频模型的 key、Base URL、生成路径可在后台模型管理配置。
+- [ ] 回归验证火山引擎模型 ID、默认尺寸、请求超时和任务查询状态；后台模型配置必须以实际开通 endpoint 为准。
 - [ ] 文件上传参考、`/` 技能、`@` 主体先保留 UI 语义，暂不做文件解析和知识库检索。
 
 ### P13 验证计划
@@ -283,12 +314,14 @@ node start-dev.js
 - 桌面端：`pnpm typecheck`、`pnpm build` 通过；`out/preload/plugin.js` 和主 preload 均已生成。
 - 移动端：`pnpm exec tsc --noEmit` 通过；`pnpm exec vite build` 仍需补齐 UniApp/HBuilderX 构建环境。
 - 发布检查：`node scripts/check-release-config.mjs` 通过；提示 `UPDATE_DIR` 未设置，因此本地未检查更新包元数据。
+- 文档：`README.md` 已更新为当前产品总览，`tool.md` 已补充宝塔部署全流程。
 - 通用：`git diff --check` 通过。
 
 ### 当前交接状态
-- 本地 `main` 已领先 `origin/main` 6 个提交，最近三笔为：插件市场/Web 沙箱、H5 移动端工作区、项目进度文档更新；正式上线前先推送到 GitHub。
-- 下一步 P13：在 1Panel/宝塔创建站点和反代，配置生产 `.env.production`，部署管理端静态资源，验证 `/api/app/toolbox/home`、`/api/admin/base/open/eps`、`/download`。
+- 当前仓库主线已同步到 `origin/main`；后续提交前仍需检查是否混入构建产物、真实 `.env` 或密钥。
+- 下一步 P13：在宝塔创建站点和反代，配置生产 `.env.production`，部署管理端静态资源，验证 `/api/app/toolbox/home`、`/api/admin/base/open/eps`、`/download`、`/upload`、`/plugins`。
 - 桌面端发布：使用 GitHub Actions 或 Windows 机器补跑 Windows unsigned 包，macOS 本机产出内测包后上传 `latest*.yml`、安装包和 blockmap 到 `/updates/desktop`。
+- 近期问题优先级：先回归学习入库后台列表和桌面端学习卡片显示，再回归 AI 生成模型的后台配置、超时和错误提示。
 - 插件与 H5 后续：插件本地解包运行、失败回滚、安装失败原因展示、PWA service worker 离线缓存仍是未完成项。
 - 注意：`cool-service-master/vue/build/cool/eps.d.ts` 是生成文件，管理端构建或 EPS 拉取会改动；提交前确认差异是否来自本轮后端接口变化。
 
@@ -299,4 +332,6 @@ node start-dev.js
 - 上线后管理端、后端、下载页和桌面端更新链路统一指向 `https://tool.baotounews.cn` 同域名分路径，可支撑 unsigned 内测发布。
 - 后台可维护自建插件市场；已发布插件可关联为 `local_plugin` 工具，第三方插件只能在 Web 沙箱内运行。
 - H5/PWA 移动端可复用工具箱接口展示、搜索并打开适合 Web 的工具，桌面专属插件不误开。
+- 学习中心后台入库后，桌面端能展示标题、封面、分类、推荐/热门状态和详情内容。
+- AI 工作台可通过后台模型配置接入文本、图片、音频、视频能力；API Key 不泄露，错误提示可读。
 - 代码遵循现有 CoolAdmin / Electron 风格，不提交密钥、构建产物或本地缓存，不破坏白名单 IPC 和生产安全约束。
