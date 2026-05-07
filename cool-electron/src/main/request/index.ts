@@ -33,18 +33,22 @@ export function registerRequestHandlers(): void {
       const elapsed = Date.now() - startAt
       const contentType = response.headers.get('content-type') ?? ''
 
-      // 根据 Content-Type 决定如何解析响应体
+      // 根据 Content-Type 决定如何解析响应体；二进制媒体转成 data URL，方便渲染层预览。
       let data: unknown
       if (contentType.includes('application/json')) {
         data = await response.json()
-      } else {
+      } else if (contentType.startsWith('text/')) {
         data = await response.text()
+      } else {
+        const buffer = Buffer.from(await response.arrayBuffer())
+        data = `data:${contentType || 'application/octet-stream'};base64,${buffer.toString('base64')}`
       }
 
       return {
         success: true,
         status: response.status,
         statusText: response.statusText,
+        contentType,
         elapsed,
         data
       }

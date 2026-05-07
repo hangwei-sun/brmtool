@@ -4,32 +4,39 @@ import * as entity1 from './modules/user/entity/info';
 import * as entity2 from './modules/user/entity/address';
 import * as entity3 from './modules/toolbox/entity/usage';
 import * as entity4 from './modules/toolbox/entity/tool';
-import * as entity5 from './modules/toolbox/entity/plugin';
-import * as entity6 from './modules/toolbox/entity/feedback';
-import * as entity7 from './modules/toolbox/entity/favorite';
-import * as entity8 from './modules/toolbox/entity/category';
-import * as entity9 from './modules/task/entity/log';
-import * as entity10 from './modules/task/entity/info';
-import * as entity11 from './modules/space/entity/type';
-import * as entity12 from './modules/space/entity/info';
-import * as entity13 from './modules/recycle/entity/data';
-import * as entity14 from './modules/plugin/entity/info';
-import * as entity15 from './modules/message/entity/read';
-import * as entity16 from './modules/message/entity/info';
-import * as entity17 from './modules/dict/entity/type';
-import * as entity18 from './modules/dict/entity/info';
-import * as entity19 from './modules/demo/entity/goods';
-import * as entity20 from './modules/base/entity/base';
-import * as entity21 from './modules/base/entity/sys/user_role';
-import * as entity22 from './modules/base/entity/sys/user';
-import * as entity23 from './modules/base/entity/sys/role_menu';
-import * as entity24 from './modules/base/entity/sys/role_department';
-import * as entity25 from './modules/base/entity/sys/role';
-import * as entity26 from './modules/base/entity/sys/param';
-import * as entity27 from './modules/base/entity/sys/menu';
-import * as entity28 from './modules/base/entity/sys/log';
-import * as entity29 from './modules/base/entity/sys/department';
-import * as entity30 from './modules/base/entity/sys/conf';
+import * as entity5 from './modules/toolbox/entity/studyVideo';
+import * as entity6 from './modules/toolbox/entity/studyCategory';
+import * as entity7 from './modules/toolbox/entity/plugin';
+import * as entity8 from './modules/toolbox/entity/feedback';
+import * as entity9 from './modules/toolbox/entity/favorite';
+import * as entity10 from './modules/toolbox/entity/category';
+import * as entity11 from './modules/task/entity/log';
+import * as entity12 from './modules/task/entity/info';
+import * as entity13 from './modules/space/entity/type';
+import * as entity14 from './modules/space/entity/info';
+import * as entity15 from './modules/recycle/entity/data';
+import * as entity16 from './modules/plugin/entity/info';
+import * as entity17 from './modules/message/entity/read';
+import * as entity18 from './modules/message/entity/info';
+import * as entity19 from './modules/dict/entity/type';
+import * as entity20 from './modules/dict/entity/info';
+import * as entity21 from './modules/demo/entity/goods';
+import * as entity22 from './modules/base/entity/base';
+import * as entity23 from './modules/base/entity/sys/user_role';
+import * as entity24 from './modules/base/entity/sys/user';
+import * as entity25 from './modules/base/entity/sys/role_menu';
+import * as entity26 from './modules/base/entity/sys/role_department';
+import * as entity27 from './modules/base/entity/sys/role';
+import * as entity28 from './modules/base/entity/sys/param';
+import * as entity29 from './modules/base/entity/sys/menu';
+import * as entity30 from './modules/base/entity/sys/log';
+import * as entity31 from './modules/base/entity/sys/department';
+import * as entity32 from './modules/base/entity/sys/conf';
+import * as entity33 from './modules/ai/entity/template';
+import * as entity34 from './modules/ai/entity/model';
+import * as entity35 from './modules/ai/entity/message';
+import * as entity36 from './modules/ai/entity/generation';
+import * as entity37 from './modules/ai/entity/conversation';
 export const entities = [
   ...Object.values(entity0),
   ...Object.values(entity1),
@@ -62,4 +69,11 @@ export const entities = [
   ...Object.values(entity28),
   ...Object.values(entity29),
   ...Object.values(entity30),
+  ...Object.values(entity31),
+  ...Object.values(entity32),
+  ...Object.values(entity33),
+  ...Object.values(entity34),
+  ...Object.values(entity35),
+  ...Object.values(entity36),
+  ...Object.values(entity37),
 ];

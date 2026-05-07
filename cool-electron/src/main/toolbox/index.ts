@@ -1,13 +1,16 @@
 import { app, ipcMain, shell } from 'electron'
+import type { IpcMainInvokeEvent } from 'electron'
 import { readFileSync, writeFileSync, rmSync, existsSync, mkdirSync, renameSync } from 'fs'
 import { join } from 'path'
 import { createHash } from 'crypto'
 
 const DEFAULT_DEV_API_BASE = 'http://127.0.0.1:8001'
 const DEFAULT_PROD_API_BASE = 'https://tool.baotounews.cn/api'
-const TIMEOUT_MS = 8000
+const DEFAULT_APP_TIMEOUT_MS = 8000
+const AI_APP_TIMEOUT_MS = 300000
+const AI_LIST_TIMEOUT_MS = 30000
 const ALLOWED_METHODS = new Set(['GET', 'POST'])
-const APP_PATH_PREFIXES = ['/app/toolbox/', '/app/user/', '/app/message/']
+const APP_PATH_PREFIXES = ['/app/toolbox/', '/app/user/', '/app/message/', '/app/ai/']
 const PLUGIN_PATH_PREFIXES = ['/app/toolbox/']
 const SESSION_FILE = 'brmtool-auth-session.json'
 const PLUGIN_STATE_FILE = 'brmtool-plugin-state.json'
@@ -34,6 +37,12 @@ interface PluginUpdatePayload {
   checksum?: string
 }
 
+interface AiStreamPayload extends AppRequestPayload {
+  requestId: string
+}
+
+const aiStreamControllers = new Map<string, AbortController>()
+
 function hasPathTraversal(path: string) {
   const pathname = path.split(/[?#]/)[0]
 
@@ -50,6 +59,23 @@ function isAllowedAppPath(pathname: string) {
 
 function isAllowedPluginPath(pathname: string) {
   return PLUGIN_PATH_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+}
+
+function appRequestTimeoutMs(path: string) {
+  if (path.startsWith('/app/ai/generate') || path.startsWith('/app/ai/generations/sync')) {
+    return AI_APP_TIMEOUT_MS
+  }
+  if (path.startsWith('/app/ai/')) {
+    return AI_LIST_TIMEOUT_MS
+  }
+  return DEFAULT_APP_TIMEOUT_MS
+}
+
+function appRequestTimeoutMessage(path: string) {
+  if (path.startsWith('/app/ai/generate') || path.startsWith('/app/ai/generations/sync')) {
+    return 'AI 生成请求超时，请稍后重试或到后台确认模型服务状态'
+  }
+  return '应用接口请求超时'
 }
 
 function apiBaseUrl() {
@@ -174,7 +200,7 @@ async function sendAppRequest(payload: AppRequestPayload, retry = true) {
 
   const startAt = Date.now()
   const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
+  const timer = setTimeout(() => controller.abort(), appRequestTimeoutMs(payload.path))
 
   try {
     const requestUrl = normalizeAppApiUrl(payload.path)
@@ -207,7 +233,9 @@ async function sendAppRequest(payload: AppRequestPayload, retry = true) {
       return refreshed ? sendAppRequest(payload, false) : { success: false, status: 401, error: '登录失效' }
     }
 
-    const data = await response.json().catch(() => null)
+    const data = normalizeResponseMediaUrls(await response.json().catch(() => null)) as {
+      message?: string
+    } | null
     return {
       success: response.ok,
       status: response.status,
@@ -217,10 +245,53 @@ async function sendAppRequest(payload: AppRequestPayload, retry = true) {
     }
   } catch (err) {
     const message =
-      (err as Error).name === 'AbortError' ? '应用接口请求超时' : (err as Error).message
+      (err as Error).name === 'AbortError'
+        ? appRequestTimeoutMessage(payload.path)
+        : (err as Error).message
     return { success: false, elapsed: Date.now() - startAt, error: message }
   } finally {
     clearTimeout(timer)
+  }
+}
+
+function normalizeResponseMediaUrls(value: unknown): unknown {
+  if (typeof value === 'string') {
+    return normalizeStaticMediaUrl(value)
+  }
+
+  if (Array.isArray(value)) {
+    return value.map(normalizeResponseMediaUrls)
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, normalizeResponseMediaUrls(item)])
+    )
+  }
+
+  return value
+}
+
+function normalizeStaticMediaUrl(value: string) {
+  if (!value.startsWith('/upload/') && !value.startsWith('/plugins/') && !/^https?:\/\//i.test(value)) {
+    return value
+  }
+
+  const baseUrl = apiBaseUrl()
+  const origin = baseUrl.origin
+
+  if (value.startsWith('/upload/') || value.startsWith('/plugins/')) {
+    return `${origin}${value}`
+  }
+
+  try {
+    const url = new URL(value)
+    const isLocal = url.hostname === '127.0.0.1' || url.hostname === 'localhost'
+    const isStaticFile = url.pathname.startsWith('/upload/') || url.pathname.startsWith('/plugins/')
+
+    return isLocal && isStaticFile ? `${origin}${url.pathname}${url.search}` : value
+  } catch {
+    return value
   }
 }
 
@@ -317,6 +388,80 @@ async function sendPluginRequest(payload: AppRequestPayload & { pluginCode?: str
   return sendAppRequest(payload)
 }
 
+async function startAiStream(event: IpcMainInvokeEvent, payload: AiStreamPayload) {
+  const requestId = String(payload.requestId || '')
+  if (!requestId) {
+    return { success: false, error: 'AI 请求 ID 不能为空' }
+  }
+
+  const method = (payload.method || 'POST').toUpperCase()
+  if (method !== 'POST') {
+    return { success: false, error: 'AI 流式请求仅支持 POST' }
+  }
+
+  const controller = new AbortController()
+  aiStreamControllers.set(requestId, controller)
+
+  const send = (data: Record<string, unknown>) => {
+    event.sender.send('ai:stream-event', { requestId, ...data })
+  }
+
+  try {
+    const requestUrl = normalizeAppApiUrl(payload.path)
+    const session = readSession()
+    const token = payload.token || session.token
+    const response = await fetch(requestUrl, {
+      method,
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'brmtool-electron/1.0',
+        ...(token ? { Authorization: token } : {})
+      },
+      body: JSON.stringify(payload.data || {})
+    })
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null)
+      throw new Error(data?.message || response.statusText || 'AI 流式请求失败')
+    }
+
+    if (!response.body) {
+      throw new Error('AI 流式响应为空')
+    }
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    while (true) {
+      const { value, done } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split(/\r?\n/)
+      buffer = lines.pop() || ''
+
+      for (const line of lines) {
+        const text = line.trim()
+        if (!text.startsWith('data:')) continue
+        const raw = text.replace(/^data:\s*/, '')
+        try {
+          send(JSON.parse(raw))
+        } catch {}
+      }
+    }
+
+    send({ type: 'closed' })
+    return { success: true }
+  } catch (err) {
+    const message = (err as Error).name === 'AbortError' ? 'AI 生成已停止' : (err as Error).message
+    send({ type: 'error', error: message })
+    return { success: false, error: message }
+  } finally {
+    aiStreamControllers.delete(requestId)
+  }
+}
+
 export function registerToolboxHandlers(): void {
   ipcMain.handle('app:request', async (_event, payload: AppRequestPayload) => sendAppRequest(payload))
   ipcMain.handle('toolbox:request', async (_event, payload: AppRequestPayload) => sendAppRequest(payload))
@@ -361,5 +506,12 @@ export function registerToolboxHandlers(): void {
     } catch (err) {
       return { success: false, error: (err as Error).message }
     }
+  })
+
+  ipcMain.handle('ai:stream-start', async (event, payload: AiStreamPayload) => startAiStream(event, payload))
+  ipcMain.handle('ai:stream-stop', (_event, requestId: string) => {
+    aiStreamControllers.get(String(requestId))?.abort()
+    aiStreamControllers.delete(String(requestId))
+    return { success: true }
   })
 }

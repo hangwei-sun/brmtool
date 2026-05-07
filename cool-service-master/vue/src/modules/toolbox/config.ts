@@ -29,6 +29,20 @@ export default (): ModuleConfig => {
 			},
 			{
 				meta: {
+					label: '学习分类'
+				},
+				path: '/toolbox/study-category',
+				component: () => import('./views/study-category.vue')
+			},
+			{
+				meta: {
+					label: '学习入库'
+				},
+				path: '/toolbox/study-video',
+				component: () => import('./views/study-video.vue')
+			},
+			{
+				meta: {
 					label: '插件市场'
 				},
 				path: '/toolbox/plugin',

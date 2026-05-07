@@ -1,0 +1,127 @@
+{
+  "ai_model": [
+    {
+      "id": 101,
+      "provider": "deepseek",
+      "capability": "text",
+      "modelId": "deepseek-v4-pro",
+      "name": "DeepSeek V4 Pro",
+      "description": "复杂推理、Agent 与高质量创作优先",
+      "isDefault": 1,
+      "thinkingDefault": 1,
+      "sort": 100,
+      "status": 1
+    },
+    {
+      "id": 102,
+      "provider": "deepseek",
+      "capability": "text",
+      "modelId": "deepseek-v4-flash",
+      "name": "DeepSeek V4 Flash",
+      "description": "快速响应、轻量问答与日常写作优先",
+      "isDefault": 0,
+      "thinkingDefault": 0,
+      "sort": 90,
+      "status": 1
+    },
+    {
+      "id": 103,
+      "provider": "volcengine",
+      "capability": "image",
+      "modelId": "doubao-seedream-5-0-260128",
+      "name": "Doubao-Seedream-5.0-lite",
+      "description": "火山引擎图片生成，模型 ID 按控制台示例/接入点配置",
+      "apiBaseUrl": "https://ark.cn-beijing.volces.com/api/v3",
+      "apiPath": "/images/generations",
+      "isDefault": 1,
+      "thinkingDefault": 0,
+      "sort": 80,
+      "status": 1
+    },
+    {
+      "id": 104,
+      "provider": "volcengine",
+      "capability": "audio_music",
+      "modelId": "volcengine-music-generation",
+      "name": "火山引擎音乐生成",
+      "description": "音乐生成接口，默认路径可在后台替换为实际火山 endpoint",
+      "apiBaseUrl": "https://ark.cn-beijing.volces.com/api/v3",
+      "apiPath": "/audio/generations",
+      "isDefault": 1,
+      "thinkingDefault": 0,
+      "sort": 70,
+      "status": 1
+    },
+    {
+      "id": 105,
+      "provider": "volcengine",
+      "capability": "audio_speech",
+      "modelId": "volcengine-chattts",
+      "name": "火山引擎 ChatTTS 语音",
+      "description": "语音合成接口，默认路径可在后台替换为实际火山 endpoint",
+      "apiBaseUrl": "https://ark.cn-beijing.volces.com/api/v3",
+      "apiPath": "/audio/speech",
+      "isDefault": 1,
+      "thinkingDefault": 0,
+      "sort": 60,
+      "status": 1
+    },
+    {
+      "id": 106,
+      "provider": "volcengine",
+      "capability": "video",
+      "modelId": "seedance-2-0",
+      "name": "字节 Seedance 2.0",
+      "description": "火山引擎视频生成任务接口，支持任务 ID 返回和后续查询",
+      "apiBaseUrl": "https://ark.cn-beijing.volces.com/api/v3",
+      "apiPath": "/contents/generations/tasks",
+      "apiTaskPath": "/contents/generations/tasks/{taskId}",
+      "isDefault": 1,
+      "thinkingDefault": 0,
+      "sort": 50,
+      "status": 1
+    }
+  ],
+  "ai_template": [
+    {
+      "id": 101,
+      "title": "创作者成长计划",
+      "category": "discover",
+      "description": "从创意到变现，系统提升创作能力",
+      "prompt": "你是一名资深创作教练。请根据用户的目标，输出一个可执行的创作者成长计划，包含阶段目标、每日动作、复盘指标和风险提醒。",
+      "tags": ["精选", "成长"],
+      "sort": 100,
+      "status": 1
+    },
+    {
+      "id": 102,
+      "title": "国风纹样生成",
+      "category": "discover",
+      "description": "生成适合国风图案创作的提示词",
+      "prompt": "你是一名视觉提示词专家。请把用户的想法改写成国风纹样生成提示词，包含主体、纹样元素、色彩、材质、构图和负面提示。",
+      "tags": ["AI 生成", "提示词"],
+      "sort": 90,
+      "status": 1
+    },
+    {
+      "id": 103,
+      "title": "城市建筑灵感",
+      "category": "discover",
+      "description": "获取建筑设计灵感与概念说明",
+      "prompt": "你是一名城市建筑概念设计顾问。请根据用户输入生成建筑灵感方案，包括设计主题、空间叙事、材料建议和落地注意事项。",
+      "tags": ["建筑", "灵感"],
+      "sort": 80,
+      "status": 1
+    },
+    {
+      "id": 104,
+      "title": "角色设定草图",
+      "category": "discover",
+      "description": "快速生成角色设定与多视图草稿说明",
+      "prompt": "你是一名角色设定编剧。请根据用户描述生成角色设定，包含身份背景、性格弧光、外观关键词、服饰细节和画师提示词。",
+      "tags": ["角色设定", "写作"],
+      "sort": 70,
+      "status": 1
+    }
+  ]
+}

@@ -1,0 +1,137 @@
+[
+  {
+    "name": "AI 工作台",
+    "router": "/ai",
+    "perms": null,
+    "type": 0,
+    "icon": "icon-app",
+    "orderNum": 3,
+    "viewPath": null,
+    "keepAlive": true,
+    "isShow": true,
+    "childMenus": [
+      {
+        "name": "模型管理",
+        "router": "/ai/model",
+        "perms": null,
+        "type": 1,
+        "icon": "icon-setting",
+        "orderNum": 1,
+        "viewPath": "modules/ai/views/model.vue",
+        "keepAlive": true,
+        "isShow": true,
+        "childMenus": [
+          {
+            "name": "新增",
+            "router": null,
+            "perms": "ai:model:add",
+            "type": 2,
+            "icon": null,
+            "orderNum": 1,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          },
+          {
+            "name": "删除",
+            "router": null,
+            "perms": "ai:model:delete",
+            "type": 2,
+            "icon": null,
+            "orderNum": 2,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          },
+          {
+            "name": "修改",
+            "router": null,
+            "perms": "ai:model:update",
+            "type": 2,
+            "icon": null,
+            "orderNum": 3,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          },
+          {
+            "name": "查询",
+            "router": null,
+            "perms": "ai:model:page,ai:model:list,ai:model:info",
+            "type": 2,
+            "icon": null,
+            "orderNum": 4,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          }
+        ]
+      },
+      {
+        "name": "模板管理",
+        "router": "/ai/template",
+        "perms": null,
+        "type": 1,
+        "icon": "icon-menu",
+        "orderNum": 2,
+        "viewPath": "modules/ai/views/template.vue",
+        "keepAlive": true,
+        "isShow": true,
+        "childMenus": [
+          {
+            "name": "新增",
+            "router": null,
+            "perms": "ai:template:add",
+            "type": 2,
+            "icon": null,
+            "orderNum": 1,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          },
+          {
+            "name": "删除",
+            "router": null,
+            "perms": "ai:template:delete",
+            "type": 2,
+            "icon": null,
+            "orderNum": 2,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          },
+          {
+            "name": "修改",
+            "router": null,
+            "perms": "ai:template:update",
+            "type": 2,
+            "icon": null,
+            "orderNum": 3,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          },
+          {
+            "name": "查询",
+            "router": null,
+            "perms": "ai:template:page,ai:template:list,ai:template:info",
+            "type": 2,
+            "icon": null,
+            "orderNum": 4,
+            "viewPath": null,
+            "keepAlive": false,
+            "isShow": true,
+            "childMenus": []
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -86,7 +86,25 @@ const api = {
   /** 下载并校验插件更新包 */
   installPluginUpdates: (
     updates: Array<{ code: string; version: string; packageUrl: string; checksum?: string }>
-  ) => ipcRenderer.invoke('plugin:install-updates', updates)
+  ) => ipcRenderer.invoke('plugin:install-updates', updates),
+
+  // ── AI 模块（Renderer → Main）────────────────────────────────────
+  /** 开始 AI 流式请求 */
+  startAiStream: (payload: { requestId: string; path: string; method?: string; data?: unknown }) =>
+    ipcRenderer.invoke('ai:stream-start', payload),
+
+  /** 停止 AI 流式请求 */
+  stopAiStream: (requestId: string) => ipcRenderer.invoke('ai:stream-stop', requestId),
+
+  /** 监听 AI 流式事件 */
+  onAiStreamEvent: (callback: (data: unknown) => void) => {
+    ipcRenderer.on('ai:stream-event', (_event, data) => callback(data))
+  },
+
+  /** 取消监听 AI 流式事件 */
+  offAiStreamEvent: () => {
+    ipcRenderer.removeAllListeners('ai:stream-event')
+  }
 }
 
 if (process.contextIsolated) {

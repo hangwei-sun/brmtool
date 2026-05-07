@@ -16,6 +16,7 @@ import {
 import { ToolboxAppService } from '../../service/app';
 import { ToolboxFeedbackService } from '../../service/feedback';
 import { ToolboxPluginService } from '../../service/plugin';
+import { ToolboxStudyVideoService } from '../../service/studyVideo';
 
 /**
  * 工具箱-桌面端接口
@@ -34,6 +35,9 @@ export class AppToolboxController extends BaseController {
 
   @Inject()
   toolboxPluginService: ToolboxPluginService;
+
+  @Inject()
+  toolboxStudyVideoService: ToolboxStudyVideoService;
 
   @CoolTag(TagTypes.IGNORE_TOKEN)
   @Get('/home', { summary: '工具箱首页数据' })
@@ -114,6 +118,52 @@ export class AppToolboxController extends BaseController {
   @Get('/plugins/market', { summary: '插件市场列表' })
   async pluginMarket() {
     return this.ok(await this.toolboxPluginService.market());
+  }
+
+  @CoolTag(TagTypes.IGNORE_TOKEN)
+  @Get('/study/categories', { summary: '学习视频分类' })
+  async studyCategories() {
+    return this.ok(await this.toolboxStudyVideoService.appCategories());
+  }
+
+  @CoolTag(TagTypes.IGNORE_TOKEN)
+  @Get('/study/videos', { summary: '学习视频列表' })
+  async studyVideos(
+    @Query('category') category: string,
+    @Query('keyword') keyword: string,
+    @Query('sort') sort: string,
+    @Query('page') page: number,
+    @Query('size') size: number
+  ) {
+    return this.ok(
+      await this.toolboxStudyVideoService.appList({
+        category,
+        keyword,
+        sort,
+        page,
+        size,
+      })
+    );
+  }
+
+  @CoolTag(TagTypes.IGNORE_TOKEN)
+  @Get('/study/videos/:id', { summary: '学习视频详情' })
+  async studyVideoInfo(@Param('id') id: number) {
+    return this.ok(await this.toolboxStudyVideoService.appInfo(Number(id)));
+  }
+
+  @CoolTag(TagTypes.IGNORE_TOKEN)
+  @Get('/study/videos/:id/recommend', { summary: '学习视频相关推荐' })
+  async studyVideoRecommend(
+    @Param('id') id: number,
+    @Query('limit') limit: number
+  ) {
+    return this.ok(
+      await this.toolboxStudyVideoService.appRecommend(
+        Number(id),
+        Number(limit)
+      )
+    );
   }
 
   @CoolTag(TagTypes.IGNORE_TOKEN)

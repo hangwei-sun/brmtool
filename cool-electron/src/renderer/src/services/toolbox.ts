@@ -1,5 +1,9 @@
 export type ToolType = 'external_link' | 'internal_web' | 'local_plugin'
-export type OpenMode = 'external_browser' | 'electron_window' | 'embedded_webview' | 'internal_route'
+export type OpenMode =
+  | 'external_browser'
+  | 'electron_window'
+  | 'embedded_webview'
+  | 'internal_route'
 
 export interface ToolboxCategory {
   id: number
@@ -67,6 +71,33 @@ export interface ToolboxHomeData {
   favoriteTools: ToolboxTool[]
   recentTools: ToolboxTool[]
   usageStats: ToolboxUsageStats
+}
+
+export interface StudyVideo {
+  id: number
+  title: string
+  category: string
+  description?: string
+  coverUrl?: string
+  videoUrl?: string
+  duration?: string
+  author?: string
+  viewCount?: number
+  publishTime?: string
+  isRecommend?: number | boolean
+  isHot?: number | boolean
+  sort?: number
+  status?: number
+  remark?: string
+}
+
+export interface StudyCategory {
+  id: number
+  name: string
+  code: string
+  sort?: number
+  status?: number
+  remark?: string
 }
 
 interface ApiEnvelope<T> {
@@ -226,7 +257,9 @@ export const defaultTools: ToolboxTool[] = [
 
 export const defaultHome: ToolboxHomeData = {
   categories: defaultCategories,
-  recommendTools: sortToolsByBackendOrder(defaultTools.filter((tool) => isTruthy(tool.isRecommend))),
+  recommendTools: sortToolsByBackendOrder(
+    defaultTools.filter((tool) => isTruthy(tool.isRecommend))
+  ),
   newTools: sortToolsByBackendOrder(defaultTools.filter((tool) => isTruthy(tool.isNew))),
   hotTools: sortToolsByBackendOrder(defaultTools.filter((tool) => isTruthy(tool.isHot))),
   favoriteTools: sortToolsByBackendOrder(defaultTools)
@@ -267,6 +300,16 @@ export function normalizeTool(tool: ToolboxTool): ToolboxTool {
     isHot: isTruthy(tool.isHot),
     isNew: isTruthy(tool.isNew),
     authRequired: isTruthy(tool.authRequired)
+  }
+}
+
+export function normalizeStudyVideo(video: StudyVideo): StudyVideo {
+  return {
+    ...video,
+    viewCount: Number.isFinite(Number(video.viewCount)) ? Number(video.viewCount) : 0,
+    sort: Number.isFinite(Number(video.sort)) ? Number(video.sort) : 0,
+    isRecommend: isTruthy(video.isRecommend),
+    isHot: isTruthy(video.isHot)
   }
 }
 
@@ -311,6 +354,43 @@ export async function fetchToolboxTools(params: {
   return sortToolsByBackendOrder(data.list.map(normalizeTool))
 }
 
+export async function fetchStudyVideos(params: {
+  category?: string
+  keyword?: string
+  sort?: string
+  page?: number
+  size?: number
+}) {
+  const query = new URLSearchParams()
+  if (params.category && params.category !== 'all') query.set('category', params.category)
+  if (params.keyword) query.set('keyword', params.keyword)
+  if (params.sort) query.set('sort', params.sort)
+  query.set('page', String(params.page || 1))
+  query.set('size', String(params.size || 40))
+
+  const data = await toolboxRequest<{ list: StudyVideo[] }>(`/app/toolbox/study/videos?${query}`)
+  return (data.list || []).map(normalizeStudyVideo)
+}
+
+export async function fetchStudyCategories() {
+  const data = await toolboxRequest<StudyCategory[]>('/app/toolbox/study/categories')
+  return (data || []).map((item) => ({
+    ...item,
+    sort: Number.isFinite(Number(item.sort)) ? Number(item.sort) : 0
+  }))
+}
+
+export async function fetchStudyVideoInfo(id: number) {
+  return normalizeStudyVideo(await toolboxRequest<StudyVideo>(`/app/toolbox/study/videos/${id}`))
+}
+
+export async function fetchStudyVideoRecommend(id: number, limit = 6) {
+  const data = await toolboxRequest<StudyVideo[]>(
+    `/app/toolbox/study/videos/${id}/recommend?limit=${limit}`
+  )
+  return (data || []).map(normalizeStudyVideo)
+}
+
 export async function toggleFavoriteRemote(toolId: number) {
   return await toolboxRequest<{ favorited: boolean }>('/app/toolbox/favorite', 'POST', { toolId })
 }
@@ -331,9 +411,13 @@ export async function submitFeedback(data: { title: string; content: string; con
 }
 
 export async function fetchPluginUpdates(installed: Array<{ code: string; version?: string }>) {
-  const data = await toolboxRequest<{ list: ToolboxPluginUpdate[] }>('/app/toolbox/plugins/checkUpdates', 'POST', {
-    installed
-  })
+  const data = await toolboxRequest<{ list: ToolboxPluginUpdate[] }>(
+    '/app/toolbox/plugins/checkUpdates',
+    'POST',
+    {
+      installed
+    }
+  )
   return data.list || []
 }
 
@@ -361,7 +445,8 @@ export async function installPluginUpdates(updates: ToolboxPluginUpdate[]) {
 }
 
 async function toolboxRequest<T>(path: string, method: 'GET' | 'POST' = 'GET', data?: unknown) {
-  const request = typeof window.api.appRequest === 'function' ? window.api.appRequest : window.api.toolboxRequest
+  const request =
+    typeof window.api.appRequest === 'function' ? window.api.appRequest : window.api.toolboxRequest
   if (typeof request !== 'function') {
     throw new Error('工具箱 IPC 未初始化，请重启桌面端')
   }
@@ -397,7 +482,9 @@ export function writeCachedHome(data: ToolboxHomeData) {
 }
 
 export function readFavoriteIds() {
-  return new Set(readJson<number[]>(FAVORITE_KEY) || defaultHome.favoriteTools.map((tool) => tool.id))
+  return new Set(
+    readJson<number[]>(FAVORITE_KEY) || defaultHome.favoriteTools.map((tool) => tool.id)
+  )
 }
 
 export function writeFavoriteIds(ids: Set<number>) {

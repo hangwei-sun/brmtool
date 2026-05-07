@@ -46,6 +46,7 @@ export interface FetchResult {
   success: boolean
   status?: number
   statusText?: string
+  contentType?: string
   elapsed?: number
   data?: unknown
   error?: string
@@ -119,6 +120,23 @@ export interface PluginUpdateInstallResult {
   error?: string
 }
 
+export interface AiStreamPayload {
+  requestId: string
+  path: string
+  method?: 'POST'
+  data?: unknown
+  token?: string
+}
+
+export interface AiStreamEvent {
+  requestId: string
+  type: 'meta' | 'delta' | 'reasoning' | 'done' | 'error' | 'closed'
+  content?: string
+  error?: string
+  conversation?: unknown
+  message?: unknown
+}
+
 /** 暴露给 Renderer 的完整 IPC API 类型定义 */
 export interface IpcApi {
   // IPC 通信模块
@@ -150,6 +168,11 @@ export interface IpcApi {
   offUpdateStatus: () => void
   // 插件模块
   installPluginUpdates: (updates: PluginUpdateInstallItem[]) => Promise<PluginUpdateInstallResult>
+  // AI 模块
+  startAiStream: (payload: AiStreamPayload) => Promise<NotificationResult>
+  stopAiStream: (requestId: string) => Promise<NotificationResult>
+  onAiStreamEvent: (callback: (data: AiStreamEvent) => void) => void
+  offAiStreamEvent: () => void
 }
 
 declare global {

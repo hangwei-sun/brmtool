@@ -12,7 +12,7 @@
 ### MVP 范围
 - 核心能力已完成：工具管理、桌面首页、搜索、收藏、打开工具、使用统计、本地缓存、登录权限、消息通知、留言板插件、内嵌 WebView、软件下载页、桌面端在线更新。
 - 支持工具类型：`external_link` 外部链接、`internal_web` 内置 Web 工具、`local_plugin` 本地插件；首批内置工具已完成 6 个。
-- 当前主线：`P13 上线交付收敛` 和 `P15-P18 插件/移动端能力收敛`。
+- 当前主线：先收口 `P19 智能页与 DeepSeek V4`，并继续推进 `P13 上线交付` 与 `P15-P18 插件/移动端能力`。
 - 暂缓：远程插件市场、Node 插件、本机命令、任意文件系统访问、原生移动端、小程序。
 
 ### 进度跟踪
@@ -22,6 +22,7 @@
 | 账号消息与桌面体验 | 已完成 | 登录权限、消息通知、留言板、WebView、下载页、在线更新 |
 | P13 上线交付 | 进行中 | 生产部署、Windows/CI 打包、更新链路验证 |
 | P15-P18 插件与移动端 | 进行中 | 插件市场、Web 沙箱、插件更新、H5/PWA |
+| P19 智能页与 DeepSeek V4 | 进行中 | AI Workspace、DeepSeek 文本对话、模型配置、模板管理 |
 
 ## 2. 项目结构与技术栈
 
@@ -258,6 +259,16 @@ node start-dev.js
 - [x] H5 登录态拦截、收藏同步、消息列表/未读数、基础 manifest 和离线提示已完成。
 - [ ] H5/PWA service worker 离线缓存策略、移动端空状态和弱网体验继续完善。
 
+### P19 智能页与 DeepSeek V4
+- 目标：将桌面端“智能”分类改造成独立 AI 工作台，首版接入 DeepSeek V4 文本模型。
+- [x] 后端新增 `ai` 模块：模型配置、模板、会话、消息实体与 APP 接口。
+- [x] DeepSeek API Key 支持后台模型管理添加/修改，接口不回显明文；`BRMTOOL_DEEPSEEK_API_KEY` 仅作为服务器环境变量兜底。
+- [x] 支持 `deepseek-v4-pro` / `deepseek-v4-flash` 模型配置和桌面端切换。
+- [x] Electron 新增 AI Workspace：Prompt 创作框、能力卡片、模板发现、历史会话和流式输出。
+- [x] 管理端新增 AI 模型管理和模板管理。
+- [x] 生图、音乐/语音、视频生成接口代理已接入火山引擎能力；Seedream / Seedance / 音频模型的 key、Base URL、生成路径可在后台模型管理配置。
+- [ ] 文件上传参考、`/` 技能、`@` 主体先保留 UI 语义，暂不做文件解析和知识库检索。
+
 ### P13 验证计划
 - 配置检查：搜索确认生产代码不再残留 `show.cool-admin.com`、`https://example.com/auto-updates`、生产数据库示例密码和真实密钥。
 - 后端：`pnpm lint`、`pnpm build`；使用生产环境变量启动一次，验证 `/api/app/toolbox/home`、`/api/admin/base/open/eps` 经 Nginx 可达。
@@ -273,6 +284,13 @@ node start-dev.js
 - 移动端：`pnpm exec tsc --noEmit` 通过；`pnpm exec vite build` 仍需补齐 UniApp/HBuilderX 构建环境。
 - 发布检查：`node scripts/check-release-config.mjs` 通过；提示 `UPDATE_DIR` 未设置，因此本地未检查更新包元数据。
 - 通用：`git diff --check` 通过。
+
+### 当前交接状态
+- 本地 `main` 已领先 `origin/main` 6 个提交，最近三笔为：插件市场/Web 沙箱、H5 移动端工作区、项目进度文档更新；正式上线前先推送到 GitHub。
+- 下一步 P13：在 1Panel/宝塔创建站点和反代，配置生产 `.env.production`，部署管理端静态资源，验证 `/api/app/toolbox/home`、`/api/admin/base/open/eps`、`/download`。
+- 桌面端发布：使用 GitHub Actions 或 Windows 机器补跑 Windows unsigned 包，macOS 本机产出内测包后上传 `latest*.yml`、安装包和 blockmap 到 `/updates/desktop`。
+- 插件与 H5 后续：插件本地解包运行、失败回滚、安装失败原因展示、PWA service worker 离线缓存仍是未完成项。
+- 注意：`cool-service-master/vue/build/cool/eps.d.ts` 是生成文件，管理端构建或 EPS 拉取会改动；提交前确认差异是否来自本轮后端接口变化。
 
 ## 10. 验收标准
 

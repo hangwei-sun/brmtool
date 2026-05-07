@@ -4,6 +4,15 @@ import { ModuleConfig } from '@cool-midway/core';
  * 模块配置
  */
 export default options => {
+  const port = options?.app?.getConfig('koa.port');
+  const deployDomain = process.env.DEPLOY_DOMAIN
+    ? `https://${process.env.DEPLOY_DOMAIN}`
+    : '';
+  const publicOrigin =
+    process.env.BRMTOOL_PUBLIC_ORIGIN ||
+    deployDomain ||
+    `http://127.0.0.1:${port}`;
+
   return {
     // 模块名称
     name: '插件模块',
@@ -20,7 +29,7 @@ export default options => {
       // 文件上传
       upload: {
         // 地址前缀
-        domain: `http://127.0.0.1:${options?.app?.getConfig('koa.port')}`,
+        domain: publicOrigin.replace(/\/api\/?$/, '').replace(/\/$/, ''),
       },
     },
   } as ModuleConfig;
