@@ -35,6 +35,10 @@
 				<em>{{ item.count }}</em>
 			</view>
 		</scroll-view>
+		<view v-if="cacheNotice" class="cache-banner">
+			<text>{{ cacheNotice }}</text>
+			<button size="mini" @tap="reloadActive">重试</button>
+		</view>
 
 		<view v-if="showMessages" class="panel">
 			<view class="panel-head">
@@ -420,7 +424,33 @@ interface AiMessage {
 	outputUrls?: string[];
 }
 
+interface CacheEntry<T> {
+	savedAt: number;
+	data: T;
+}
+
+interface CachedHome {
+	categories: ToolboxCategory[];
+	tools: ToolboxTool[];
+}
+
+interface CachedStudy {
+	categories: StudyCategory[];
+	videos: StudyVideo[];
+}
+
+interface CachedAiMeta {
+	models: AiModel[];
+	templates: AiTemplate[];
+}
+
 const { user } = useStore();
+
+const CACHE_KEYS = {
+	home: "brmtool:p20:mobile:home:v1",
+	study: "brmtool:p20:mobile:study:v1",
+	ai: "brmtool:p20:mobile:ai-meta:v1",
+};
 
 const keyword = ref("");
 const activeTab = ref("all");
@@ -465,6 +495,11 @@ const isAiSending = ref(false);
 const aiError = ref("");
 const selfCheckLoading = ref(false);
 const lastSelfCheckAt = ref("");
+const cacheFallbacks = reactive({
+	tools: "",
+	study: "",
+	ai: "",
+});
 
 const aiModes = [
 	{ type: "text" as const, label: "Agent 模式" },
@@ -549,8 +584,18 @@ const selfCheckSummary = computed(() => [
 	{ label: "接口", value: config.baseUrl || "/api" },
 	{ label: "身份", value: isLoggedIn.value ? user.info?.nickName || "已登录" : "未登录" },
 	{ label: "数据", value: `工具 ${tools.value.length} / 学习 ${studyVideos.value.length} / AI ${aiModels.value.length}` },
+	{ label: "缓存", value: cacheFallbackSummary.value },
 	{ label: "检查", value: lastSelfCheckAt.value || "未执行" },
 ]);
+const cacheNotice = computed(() => Object.values(cacheFallbacks).filter(Boolean).join("；"));
+const cacheFallbackSummary = computed(() => {
+	const scopes = [
+		cacheFallbacks.tools ? "工具" : "",
+		cacheFallbacks.study ? "学习" : "",
+		cacheFallbacks.ai ? "AI" : "",
+	].filter(Boolean);
+	return scopes.length ? `${scopes.join("/")} 使用缓存` : "未使用";
+});
 const selfCheckItems = computed(() => {
 	const webTools = tools.value.filter((item) => item.type !== "local_plugin" && normalizeToolUrl(item.entry));
 	const items: Array<{
@@ -691,6 +736,8 @@ function copySelfCheckReport() {
 		`接口：${config.baseUrl || "/api"}`,
 		`身份：${isLoggedIn.value ? user.info?.nickName || "已登录" : "未登录"}`,
 		`最近检查：${lastSelfCheckAt.value || "未执行"}`,
+		`缓存：${cacheFallbackSummary.value}`,
+		`失败摘要：${failureSummary() || "无"}`,
 		`数据：工具 ${tools.value.length} / Web 工具 ${mobileWebToolCount()} / 学习 ${studyVideos.value.length} / AI ${aiModels.value.length} / 未读 ${unreadCount.value}`,
 		...selfCheckItems.value.map((item) => `${item.title}：${item.label}｜${item.description}`),
 	].join("\n");
@@ -722,8 +769,21 @@ async function loadHome() {
 		});
 		tools.value = Array.from(map.values()).sort(compareSort);
 		favoriteIds.value = new Set(tools.value.filter((item) => item.isFavorite).map((item) => item.id));
+		cacheFallbacks.tools = "";
+		writeLocalCache<CachedHome>(CACHE_KEYS.home, {
+			categories: categories.value,
+			tools: toCacheableTools(tools.value),
+		});
 	} catch (err) {
-		error.value = (err as Error).message || "工具箱接口暂不可用";
+		const cached = readLocalCache<CachedHome>(CACHE_KEYS.home);
+		if (cached) {
+			categories.value = normalizeCategories(cached.data.categories || []);
+			tools.value = (cached.data.tools || []).map(normalizeTool).sort(compareSort);
+			cacheFallbacks.tools = `工具接口失败，已显示 ${formatCacheTime(cached.savedAt)} 缓存`;
+			error.value = `${friendlyError((err as Error).message || "工具箱接口暂不可用")}，已显示最近缓存`;
+		} else {
+			error.value = friendlyError((err as Error).message || "工具箱接口暂不可用");
+		}
 	} finally {
 		loading.value = false;
 	}
@@ -831,7 +891,15 @@ async function loadStudyMeta() {
 		studyCategories.value = [{ id: 0, name: "全部内容", code: "all" }, ...(data || [])];
 		await loadStudyVideos();
 	} catch (err) {
-		studyError.value = friendlyError((err as Error).message);
+		const cached = readLocalCache<CachedStudy>(CACHE_KEYS.study);
+		if (cached) {
+			studyCategories.value = cached.data.categories || [{ id: 0, name: "全部内容", code: "all" }];
+			studyVideos.value = cached.data.videos || [];
+			cacheFallbacks.study = `学习接口失败，已显示 ${formatCacheTime(cached.savedAt)} 缓存`;
+			studyError.value = `${friendlyError((err as Error).message)}，已显示最近缓存`;
+		} else {
+			studyError.value = friendlyError((err as Error).message);
+		}
 	}
 }
 
@@ -845,8 +913,21 @@ async function loadStudyVideos() {
 			method: "GET",
 		})) as any;
 		studyVideos.value = data.list || [];
+		cacheFallbacks.study = "";
+		writeLocalCache<CachedStudy>(CACHE_KEYS.study, {
+			categories: studyCategories.value,
+			videos: studyVideos.value,
+		});
 	} catch (err) {
-		studyError.value = friendlyError((err as Error).message);
+		const cached = readLocalCache<CachedStudy>(CACHE_KEYS.study);
+		if (cached) {
+			studyCategories.value = cached.data.categories || studyCategories.value;
+			studyVideos.value = cached.data.videos || [];
+			cacheFallbacks.study = `学习接口失败，已显示 ${formatCacheTime(cached.savedAt)} 缓存`;
+			studyError.value = `${friendlyError((err as Error).message)}，已显示最近缓存`;
+		} else {
+			studyError.value = friendlyError((err as Error).message);
+		}
 	} finally {
 		studyLoading.value = false;
 	}
@@ -885,8 +966,27 @@ async function loadAiMeta() {
 			selectedModelId.value = defaultModel.modelId;
 			thinking.value = Boolean(defaultModel.thinkingDefault);
 		}
+		cacheFallbacks.ai = "";
+		writeLocalCache<CachedAiMeta>(CACHE_KEYS.ai, {
+			models: aiModels.value,
+			templates: templates.value,
+		});
 	} catch (err) {
-		aiMetaError.value = friendlyError((err as Error).message);
+		const cached = readLocalCache<CachedAiMeta>(CACHE_KEYS.ai);
+		if (cached) {
+			aiModels.value = cached.data.models || [];
+			templates.value = cached.data.templates || [];
+			const defaultModel = aiModels.value.find((item) => item.capability === "text" && item.isDefault) ||
+				aiModels.value.find((item) => item.capability === "text");
+			if (defaultModel && !selectedModelId.value) {
+				selectedModelId.value = defaultModel.modelId;
+				thinking.value = Boolean(defaultModel.thinkingDefault);
+			}
+			cacheFallbacks.ai = `AI 配置接口失败，已显示 ${formatCacheTime(cached.savedAt)} 缓存`;
+			aiMetaError.value = `${friendlyError((err as Error).message)}，已显示最近缓存`;
+		} else {
+			aiMetaError.value = friendlyError((err as Error).message);
+		}
 	} finally {
 		aiMetaLoading.value = false;
 	}
@@ -1068,9 +1168,45 @@ function mobileWebToolCount() {
 	return tools.value.filter((item) => item.type !== "local_plugin" && normalizeToolUrl(item.entry)).length;
 }
 
+function toCacheableTools(list: ToolboxTool[]) {
+	return list.map((item) => ({
+		...item,
+		isFavorite: false,
+	}));
+}
+
+function writeLocalCache<T>(key: string, data: T) {
+	try {
+		uni.setStorageSync(key, {
+			savedAt: Date.now(),
+			data,
+		} as CacheEntry<T>);
+	} catch {}
+}
+
+function readLocalCache<T>(key: string) {
+	try {
+		const value = uni.getStorageSync(key) as CacheEntry<T>;
+		if (value?.data && value.savedAt) return value;
+	} catch {}
+	return null;
+}
+
+function failureSummary() {
+	return [error.value, studyError.value, aiMetaError.value, messageError.value, aiError.value]
+		.filter(Boolean)
+		.join("；");
+}
+
 function formatCheckTime(date: Date) {
 	const pad = (value: number) => String(value).padStart(2, "0");
 	return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+}
+
+function formatCacheTime(timestamp: number) {
+	const date = new Date(timestamp);
+	const pad = (value: number) => String(value).padStart(2, "0");
+	return `${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 function friendlyError(message = "") {
@@ -1533,6 +1669,26 @@ button {
 .empty-state.warning {
 	border-color: rgba(255, 200, 87, 0.34);
 	background: rgba(66, 50, 28, 0.34);
+}
+
+.cache-banner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 18rpx;
+	margin: -10rpx 0 24rpx;
+	padding: 18rpx 20rpx;
+	border: 1px solid rgba(255, 200, 87, 0.32);
+	border-radius: 16rpx;
+	background: rgba(66, 50, 28, 0.36);
+	color: #ffe4a8;
+	font-size: 24rpx;
+	line-height: 1.45;
+}
+
+.cache-banner text {
+	flex: 1;
+	min-width: 0;
 }
 
 .self-check-head {

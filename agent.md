@@ -316,6 +316,7 @@ node start-dev.js
 - [x] 移动端联调自检项支持点击直达验证目标：工具/学习/AI Tab 或消息面板；未登录项自动唤起登录。
 - [x] 移动端联调自检补充环境摘要：展示接口地址、登录态、核心数据数量和最近检查时间。
 - [x] 移动端联调自检支持复制诊断报告，便于 H5/小程序现场问题回传。
+- [x] 移动端工具、学习和 AI 元数据支持最近一次只读缓存兜底，弱网失败时展示缓存提示并写入诊断报告。
 - [x] 新增 `docs/qa/mobile-p20-checklist.md`，固化 H5 浏览器、小程序开发者工具和生产域名联调清单。
 - [ ] 需要在真实浏览器、小程序开发者工具和生产域名下做视觉与接口联调。
 
@@ -339,6 +340,7 @@ node start-dev.js
 - P20 移动端联调自检直达：`git diff --check`、`cool-uni-8.x pnpm exec tsc --noEmit` 通过；自检项可点击进入对应验证目标。
 - P20 移动端联调自检摘要：`git diff --check`、`cool-uni-8.x pnpm exec tsc --noEmit` 通过；自检面板可显示接口、身份、数据量和最近检查时间。
 - P20 移动端联调报告复制：已用 `ctx7` 查询 UniApp 剪贴板 API，`git diff --check`、`cool-uni-8.x pnpm exec tsc --noEmit` 通过；复制内容不包含 token、key 或密码。
+- P20 移动端弱网缓存兜底：已用 `ctx7` 查询 UniApp Storage API，工具、学习、AI 元数据成功加载后写入本地缓存；接口失败时只读展示最近缓存，并在自检报告中记录缓存状态和失败摘要，不缓存 token、AI 对话正文或用户隐私数据；`git diff --check`、`cool-uni-8.x pnpm exec tsc --noEmit` 通过，`pnpm exec vite build --mode h5` 仍失败于缺少既有构建器依赖 `@dcloudio/vite-plugin-uni`。
 - P20 移动端联调清单：已用 `ctx7` 查询 UniApp 多平台构建文档，新增 `docs/qa/mobile-p20-checklist.md`，记录 H5、小程序和生产域名验证项；仅为待执行清单，不虚假勾选真实联调。
 - 发布检查：`node scripts/check-release-config.mjs` 通过；提示 `UPDATE_DIR` 未设置，因此本地未检查更新包元数据。
 - 文档：`README.md` 已更新为当前产品总览，`tool.md` 已补充宝塔部署全流程，`/web` 公开工具站与移动端一致性已记录。
