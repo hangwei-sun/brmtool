@@ -105,6 +105,7 @@
 							<div>
 								<span>AGENT WORKSPACE</span>
 								<h1>{{ aiTitle }}</h1>
+								<p>{{ aiSubtitle }}</p>
 								</div>
 								<div class="model-controls">
 									<select v-model="selectedModelId" :disabled="!modeModels.length">
@@ -649,6 +650,11 @@ const modeModelLabel = computed(() => {
 });
 const selectedModel = computed(() => aiModels.value.find(item => item.modelId === selectedModelId.value));
 const aiTitle = computed(() => activeConversation.value?.title || '今天想创作什么？');
+const aiSubtitle = computed(() => {
+	if (!currentUser.value) return '登录后同步桌面端会话、模板和生成记录';
+	if (activeConversation.value) return '已同步桌面端智能会话';
+	return '选择模板或直接输入任务开始创作';
+});
 const composerPlaceholder = computed(() => {
 	if (aiMode.value === 'image') return '描述你想生成的图片，默认 1920x1920...';
 	if (aiMode.value === 'audio_music') return '描述音乐风格、节奏、情绪和用途...';
@@ -671,11 +677,12 @@ const categorySubtitle = computed(() =>
 watch(aiMode, syncSelectedModelForMode);
 
 onMounted(async () => {
+	await restoreSessionUser();
 	await Promise.allSettled([
 		loadHome(),
 		loadStudyMeta(),
 		loadAiMeta(),
-		currentUser.value ? loadConversations() : Promise.resolve()
+		currentUser.value ? loadConversations(true) : Promise.resolve()
 	]);
 	if (currentUser.value) {
 		await loadUnreadCount();
@@ -945,12 +952,15 @@ async function ensureAiReady() {
 	if (!currentUser.value) {
 		return;
 	}
-	await Promise.allSettled([loadAiMeta(), loadConversations()]);
+	await Promise.allSettled([loadAiMeta(), loadConversations(true)]);
 }
 
-async function loadConversations() {
+async function loadConversations(autoOpen = false) {
 	const data = await apiRequest<{ list: AiConversation[] }>('/app/ai/conversations?page=1&size=50');
 	conversations.value = data.list || [];
+	if (autoOpen && !activeConversation.value && conversations.value[0]) {
+		await loadConversation(conversations.value[0].id);
+	}
 }
 
 async function loadConversation(id: number) {
@@ -1095,7 +1105,7 @@ async function login() {
 		writeFavoriteIds(favoriteIds.value, user);
 		await syncFavoriteIdsToCloud(favoriteIds.value);
 		showLogin.value = false;
-		await Promise.allSettled([loadHome(), loadUnreadCount(), loadAiMeta(), loadConversations()]);
+		await Promise.allSettled([loadHome(), loadUnreadCount(), loadAiMeta(), loadConversations(true)]);
 	} catch (err) {
 		loginError.value = (err as Error).message || '登录失败';
 	} finally {
@@ -1152,6 +1162,23 @@ function readSession(): Session {
 		return JSON.parse(localStorage.getItem(SESSION_KEY) || '{}');
 	} catch {
 		return {};
+	}
+}
+
+async function restoreSessionUser() {
+	const session = readSession();
+	if (!session.token) return;
+	if (session.user?.id) {
+		currentUser.value = session.user;
+		return;
+	}
+	try {
+		const user = await apiRequest<UserInfo>('/app/user/info/person');
+		currentUser.value = user;
+		writeSession({ ...session, user });
+	} catch {
+		localStorage.removeItem(SESSION_KEY);
+		currentUser.value = null;
 	}
 }
 
@@ -2275,12 +2302,32 @@ select:focus-visible {
 	display: flex;
 	justify-content: space-between;
 	gap: 20px;
+	align-items: flex-start;
+	padding-bottom: 18px;
+	border-bottom: 1px solid rgba(74, 137, 199, 0.18);
 }
 
 .ai-head span {
 	color: #32e9ff;
 	font-size: 12px;
 	letter-spacing: 0.12em;
+}
+
+.ai-head h1 {
+	max-width: min(620px, 52vw);
+	margin-top: 8px;
+	font-size: clamp(26px, 3.2vw, 42px);
+	line-height: 1.16;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.ai-head p {
+	margin: 8px 0 0;
+	color: #8ba6c5;
+	font-size: 14px;
+	line-height: 1.5;
 }
 
 .model-controls {
@@ -2479,17 +2526,16 @@ select:focus-visible {
 	align-self: end;
 	justify-self: center;
 	width: min(760px, 82%);
-	height: 146px;
 	min-height: 146px;
 	display: grid;
-	grid-template-rows: 48px 46px;
+	grid-template-rows: auto auto;
 	gap: 12px;
 	margin: 0;
 	padding: 18px;
 	border: 1px solid rgba(88, 110, 132, 0.55);
 	border-radius: 20px;
 	background: rgba(22, 26, 34, 0.96);
-	overflow: hidden;
+	overflow: visible;
 }
 
 .composer textarea {
@@ -2504,17 +2550,11 @@ select:focus-visible {
 
 .mode-actions {
 	display: flex;
+	flex-wrap: wrap;
 	gap: 8px;
 	align-items: center;
 	min-height: 0;
-	overflow-x: auto;
-	overflow-y: visible;
 	padding-bottom: 2px;
-	scrollbar-width: none;
-}
-
-.mode-actions::-webkit-scrollbar {
-	display: none;
 }
 
 .mode-actions .mode-btn {
@@ -2523,8 +2563,6 @@ select:focus-visible {
 }
 
 .composer .send {
-	position: sticky;
-	right: 0;
 	flex: 0 0 auto;
 	margin-left: auto;
 	border-radius: 999px;
