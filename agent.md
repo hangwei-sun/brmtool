@@ -309,6 +309,14 @@ node start-dev.js
 - [x] 移动端 `pages/toolbox/home` 已升级为多工作区入口，覆盖工具、学习、AI、消息和我的。
 - [x] 移动端外链打开做 H5/小程序差异处理：H5 进入 web-view，小程序复制链接并提示。
 - [x] PC Web 文本 AI 使用流式接口，移动端使用兼容 H5/小程序的普通请求；图片、音频、视频生成均走 `/app/ai/generate`。
+- [x] 移动端工具箱完成一轮视觉收口：统一移动控制台风格、触控尺寸、卡片密度、搜索/Tab/AI 输入区层级，并避免使用小程序兼容性较弱的样式。
+- [x] 移动端补齐工具、学习、消息、收藏和 AI 元数据加载的空状态、错误提示与重试/登录动作，弱网时不只依赖 toast。
+- [x] 移动端工具箱启用页面下拉刷新，并为工具、学习、消息和 AI 配置加载补齐轻量骨架屏。
+- [x] 移动端“我的”页新增联调自检面板，可一键检查工具、Web 打开、学习、AI 和消息的当前就绪状态。
+- [x] 移动端联调自检项支持点击直达验证目标：工具/学习/AI Tab 或消息面板；未登录项自动唤起登录。
+- [x] 移动端联调自检补充环境摘要：展示接口地址、登录态、核心数据数量和最近检查时间。
+- [x] 移动端联调自检支持复制诊断报告，便于 H5/小程序现场问题回传。
+- [x] 新增 `docs/qa/mobile-p20-checklist.md`，固化 H5 浏览器、小程序开发者工具和生产域名联调清单。
 - [ ] 需要在真实浏览器、小程序开发者工具和生产域名下做视觉与接口联调。
 
 ### P13 验证计划
@@ -324,6 +332,14 @@ node start-dev.js
 - 管理端：`pnpm type-check`、`pnpm build` 通过；构建时本地 API 未启动，EPS 拉取提示失败但使用现有缓存继续完成构建。
 - 桌面端：`pnpm typecheck`、`pnpm build` 通过；`out/preload/plugin.js` 和主 preload 均已生成。
 - 移动端：`pnpm exec tsc --noEmit` 通过；`pnpm exec vite build` 仍需补齐 UniApp/HBuilderX 构建环境。
+- P20 移动端样式收口：`git diff --check`、`cool-uni-8.x pnpm exec tsc --noEmit` 通过；`pnpm exec vite build --mode h5` 仍失败于缺少既有构建器依赖 `@dcloudio/vite-plugin-uni`，需在完整 UniApp/HBuilderX 环境复跑。
+- P20 移动端空状态/弱网体验：`git diff --check`、`cool-uni-8.x pnpm exec tsc --noEmit` 通过；工具、学习、消息、收藏和 AI 元数据加载失败已提供页面内重试或登录动作。
+- P20 移动端加载/刷新体验：根据 UniApp 文档为工具箱页开启 `enablePullDownRefresh`，接入 `onPullDownRefresh` 和 `uni.stopPullDownRefresh()`；`git diff --check`、`cool-uni-8.x pnpm exec tsc --noEmit` 通过。
+- P20 移动端联调自检入口：`cool-uni-8.x pnpm exec tsc --noEmit` 通过；“我的”页可刷新并展示工具、移动端打开、学习、AI、消息五项状态。
+- P20 移动端联调自检直达：`git diff --check`、`cool-uni-8.x pnpm exec tsc --noEmit` 通过；自检项可点击进入对应验证目标。
+- P20 移动端联调自检摘要：`git diff --check`、`cool-uni-8.x pnpm exec tsc --noEmit` 通过；自检面板可显示接口、身份、数据量和最近检查时间。
+- P20 移动端联调报告复制：已用 `ctx7` 查询 UniApp 剪贴板 API，`git diff --check`、`cool-uni-8.x pnpm exec tsc --noEmit` 通过；复制内容不包含 token、key 或密码。
+- P20 移动端联调清单：已用 `ctx7` 查询 UniApp 多平台构建文档，新增 `docs/qa/mobile-p20-checklist.md`，记录 H5、小程序和生产域名验证项；仅为待执行清单，不虚假勾选真实联调。
 - 发布检查：`node scripts/check-release-config.mjs` 通过；提示 `UPDATE_DIR` 未设置，因此本地未检查更新包元数据。
 - 文档：`README.md` 已更新为当前产品总览，`tool.md` 已补充宝塔部署全流程，`/web` 公开工具站与移动端一致性已记录。
 - 通用：`git diff --check` 通过。

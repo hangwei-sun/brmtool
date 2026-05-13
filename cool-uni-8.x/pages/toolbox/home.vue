@@ -41,6 +41,9 @@
 				<text>消息通知</text>
 				<button size="mini" :loading="messageLoading" @tap="loadMessages">刷新</button>
 			</view>
+			<view v-if="messageLoading && !messages.length" class="loading-list">
+				<view v-for="item in 3" :key="item" class="loading-row" />
+			</view>
 			<view
 				v-for="item in messages"
 				:key="item.id"
@@ -51,7 +54,15 @@
 				<text>{{ item.title }}</text>
 				<text>{{ item.createTime || item.publishTime || "" }}</text>
 			</view>
-			<view v-if="!messages.length" class="empty small">暂无消息</view>
+			<view v-if="messageError" class="empty-state compact">
+				<text>消息加载失败</text>
+				<text>{{ messageError }}</text>
+				<button size="mini" @tap="loadMessages">重试</button>
+			</view>
+			<view v-else-if="!messages.length" class="empty-state compact">
+				<text>暂无消息</text>
+				<text>新的通知会在这里同步显示。</text>
+			</view>
 		</view>
 
 		<view v-if="showLogin" class="panel login-panel">
@@ -82,7 +93,26 @@
 				</view>
 			</view>
 
-			<scroll-view class="template-scroll" scroll-x v-if="!aiMessages.length">
+			<view v-if="!isLoggedIn" class="empty-state">
+				<text>登录后开启 AI 工作台</text>
+				<text>模型、模板、会话和生成记录会同步到你的账号。</text>
+				<button size="mini" @tap="showLogin = true">去登录</button>
+			</view>
+			<view v-else-if="aiMetaError && !aiModels.length" class="empty-state">
+				<text>AI 配置加载失败</text>
+				<text>{{ aiMetaError }}</text>
+				<button size="mini" @tap="loadAiMeta">重试</button>
+			</view>
+			<view v-else-if="aiMetaLoading && !aiModels.length" class="loading-grid">
+				<view v-for="item in 3" :key="item" class="loading-card" />
+			</view>
+			<view v-else-if="!aiModels.length && !aiMessages.length" class="empty-state">
+				<text>暂无可用 AI 模型</text>
+				<text>请在后台 AI 模型管理中启用文本或多模态模型。</text>
+				<button size="mini" @tap="loadAiMeta">刷新配置</button>
+			</view>
+
+			<scroll-view class="template-scroll" scroll-x v-if="isLoggedIn && !aiMessages.length && templates.length">
 				<view v-for="item in templates" :key="item.id" class="template-card" @tap="useTemplate(item)">
 					<text>{{ item.tags?.[0] || "精选" }}</text>
 					<text>{{ item.title }}</text>
@@ -152,6 +182,14 @@
 				<button size="mini" :class="{ active: studySort === 'recommend' }" @tap="studySort = 'recommend'; loadStudyVideos()">推荐</button>
 				<button size="mini" :class="{ active: studySort === 'hot' }" @tap="studySort = 'hot'; loadStudyVideos()">热门</button>
 			</view>
+			<view v-if="studyError" class="empty-state">
+				<text>学习内容加载失败</text>
+				<text>{{ studyError }}</text>
+				<button size="mini" @tap="loadStudyVideos">重试</button>
+			</view>
+			<view v-if="studyLoading && !studyVideos.length" class="loading-grid">
+				<view v-for="item in 2" :key="item" class="loading-card tall" />
+			</view>
 			<view class="study-list">
 				<view v-for="item in visibleStudyVideos" :key="item.id" class="study-card" @tap="openStudy(item)">
 					<view class="cover">
@@ -165,7 +203,11 @@
 					</view>
 				</view>
 			</view>
-			<view v-if="!visibleStudyVideos.length && !studyLoading" class="empty">暂无学习内容</view>
+			<view v-if="!visibleStudyVideos.length && !studyLoading && !studyError" class="empty-state">
+				<text>暂无学习内容</text>
+				<text>{{ keyword ? "换个关键词试试，或清空搜索后刷新。" : "后台发布学习内容后会显示在这里。" }}</text>
+				<button size="mini" @tap="loadStudyVideos">刷新</button>
+			</view>
 		</view>
 
 		<view v-else-if="activeTab === 'my'" class="my-page">
@@ -185,6 +227,39 @@
 						<text class="name">{{ tool.name }}</text>
 						<text class="summary">{{ tool.description }}</text>
 					</view>
+				</view>
+			</view>
+			<view v-if="!favoriteTools.length" class="empty-state">
+				<text>还没有收藏</text>
+				<text>在工具卡片上点亮星标，常用工具会集中到这里。</text>
+				<button size="mini" @tap="activeTab = 'all'">去看看工具</button>
+			</view>
+			<view class="section-head self-check-head">
+				<text>联调自检</text>
+				<view class="self-check-actions">
+					<button size="mini" @tap="copySelfCheckReport">复制</button>
+					<button size="mini" :loading="selfCheckLoading" @tap="runMobileSelfCheck">检查</button>
+				</view>
+			</view>
+			<view class="check-summary">
+				<view v-for="item in selfCheckSummary" :key="item.label">
+					<text>{{ item.label }}</text>
+					<text>{{ item.value }}</text>
+				</view>
+			</view>
+			<view class="check-list">
+				<view
+					v-for="item in selfCheckItems"
+					:key="item.key"
+					class="check-item"
+					:class="item.status"
+					@tap="openSelfCheckTarget(item.target)"
+				>
+					<view>
+						<text>{{ item.title }}</text>
+						<text>{{ item.description }}</text>
+					</view>
+					<text class="check-status">{{ item.label }}</text>
 				</view>
 			</view>
 		</view>
@@ -210,7 +285,14 @@
 				<text>{{ activeTab === 'favorite' ? "全部收藏" : "推荐工具" }}</text>
 				<button size="mini" :loading="loading" @tap="loadHome">刷新</button>
 			</view>
-			<view v-if="error" class="error">{{ error }}</view>
+			<view v-if="error" class="empty-state warning">
+				<text>工具数据加载失败</text>
+				<text>{{ error }}</text>
+				<button size="mini" @tap="loadHome">重试</button>
+			</view>
+			<view v-if="loading && !tools.length" class="loading-grid">
+				<view v-for="item in 4" :key="item" class="loading-card" />
+			</view>
 			<view class="tool-list">
 				<view v-for="tool in visibleTools" :key="tool.id" class="tool-card" @tap="openTool(tool)">
 					<view class="icon">{{ tool.icon }}</view>
@@ -228,18 +310,25 @@
 					</view>
 				</view>
 			</view>
-			<view v-if="!visibleTools.length && !loading" class="empty">暂无可展示工具</view>
+			<view v-if="!visibleTools.length && !loading && !error" class="empty-state">
+				<text>{{ activeTab === "favorite" ? "暂无收藏工具" : "暂无可展示工具" }}</text>
+				<text>{{ keyword ? "当前搜索没有命中，清空关键词或切换分类试试。" : "后台发布工具后会显示在这里。" }}</text>
+				<button size="mini" @tap="reloadActive">刷新</button>
+			</view>
 		</view>
 	</view>
 </template>
 
 <script lang="ts" setup>
+import { onPullDownRefresh } from "@dcloudio/uni-app";
 import { computed, onMounted, ref, reactive } from "vue";
 import { config, useStore } from "/@/cool";
 import request from "/@/cool/service/request";
 
 type ToolType = "external_link" | "internal_web" | "local_plugin";
 type AiMode = "text" | "image" | "audio_music" | "audio_speech" | "video";
+type CheckStatus = "ok" | "warn" | "todo";
+type SelfCheckTarget = "tools" | "study" | "ai" | "messages";
 
 interface ToolboxCategory {
 	id: number;
@@ -351,6 +440,7 @@ const unreadCount = ref(0);
 const messages = ref<ToolboxMessage[]>([]);
 const showMessages = ref(false);
 const messageLoading = ref(false);
+const messageError = ref("");
 const showLogin = ref(false);
 const isLoggingIn = ref(false);
 const loginError = ref("");
@@ -360,8 +450,11 @@ const activeStudyCategory = ref("all");
 const studySort = ref<"recommend" | "hot">("recommend");
 const studyVideos = ref<StudyVideo[]>([]);
 const studyLoading = ref(false);
+const studyError = ref("");
 const aiModels = ref<AiModel[]>([]);
 const templates = ref<AiTemplate[]>([]);
+const aiMetaError = ref("");
+const aiMetaLoading = ref(false);
 const selectedModelId = ref("");
 const thinking = ref(true);
 const aiMode = ref<AiMode>("text");
@@ -370,6 +463,8 @@ const aiMessages = ref<AiMessage[]>([]);
 const activeConversation = ref<AiConversation | null>(null);
 const isAiSending = ref(false);
 const aiError = ref("");
+const selfCheckLoading = ref(false);
+const lastSelfCheckAt = ref("");
 
 const aiModes = [
 	{ type: "text" as const, label: "Agent 模式" },
@@ -450,12 +545,85 @@ const visibleStudyVideos = computed(() => {
 		return !key || text.includes(key);
 	});
 });
+const selfCheckSummary = computed(() => [
+	{ label: "接口", value: config.baseUrl || "/api" },
+	{ label: "身份", value: isLoggedIn.value ? user.info?.nickName || "已登录" : "未登录" },
+	{ label: "数据", value: `工具 ${tools.value.length} / 学习 ${studyVideos.value.length} / AI ${aiModels.value.length}` },
+	{ label: "检查", value: lastSelfCheckAt.value || "未执行" },
+]);
+const selfCheckItems = computed(() => {
+	const webTools = tools.value.filter((item) => item.type !== "local_plugin" && normalizeToolUrl(item.entry));
+	const items: Array<{
+		key: string;
+		title: string;
+		description: string;
+		label: string;
+		status: CheckStatus;
+		target: SelfCheckTarget;
+	}> = [
+		{
+			key: "tools",
+			title: "工具数据",
+			description: tools.value.length ? "首页、分类、搜索和收藏可继续回归。" : error.value || "点击检查同步工具首页接口。",
+			label: tools.value.length ? `${tools.value.length} 个` : error.value ? "需重试" : "待检查",
+			status: tools.value.length ? "ok" : error.value ? "warn" : "todo",
+			target: "tools",
+		},
+		{
+			key: "open",
+			title: "移动端打开",
+			description: webTools.length ? "H5 进入 web-view，小程序端复制链接兜底。" : "暂无可在移动端打开的 Web 工具。",
+			label: webTools.length ? `${webTools.length} 个` : "待配置",
+			status: webTools.length ? "ok" : "todo",
+			target: "tools",
+		},
+		{
+			key: "study",
+			title: "学习中心",
+			description: studyVideos.value.length ? "分类、排序和视频卡片已拿到数据。" : studyError.value || "点击检查同步学习列表。",
+			label: studyVideos.value.length ? `${studyVideos.value.length} 条` : studyError.value ? "需重试" : "待检查",
+			status: studyVideos.value.length ? "ok" : studyError.value ? "warn" : "todo",
+			target: "study",
+		},
+		{
+			key: "ai",
+			title: "AI 工作台",
+			description: aiSelfCheckDescription(),
+			label: !isLoggedIn.value ? "需登录" : aiModels.value.length ? `${aiModels.value.length} 个` : aiMetaError.value ? "需重试" : "待检查",
+			status: !isLoggedIn.value ? "todo" : aiModels.value.length ? "ok" : aiMetaError.value ? "warn" : "todo",
+			target: "ai",
+		},
+		{
+			key: "message",
+			title: "消息通知",
+			description: !isLoggedIn.value ? "登录后检查未读数和消息列表。" : messageError.value || "可打开消息面板验证列表和已读。",
+			label: !isLoggedIn.value ? "需登录" : messageError.value ? "需重试" : unreadCount.value ? `${unreadCount.value} 未读` : "可验证",
+			status: !isLoggedIn.value ? "todo" : messageError.value ? "warn" : "ok",
+			target: "messages",
+		},
+	];
+	return items;
+});
+
+function aiSelfCheckDescription() {
+	if (!isLoggedIn.value) return "登录后检查模型、模板和生成接口。";
+	if (aiModels.value.length) return "模型配置已加载，可继续验证文本和多模态生成。";
+	return aiMetaError.value || "点击检查同步 AI 模型配置。";
+}
 
 onMounted(() => {
 	loadHome();
 	loadStudyMeta();
 	loadAiMeta();
 	loadUnreadCount();
+});
+
+onPullDownRefresh(async () => {
+	try {
+		await refreshActive();
+	} finally {
+		uni.stopPullDownRefresh();
+	}
 });
 
 function switchTab(code: string) {
@@ -466,8 +634,75 @@ function switchTab(code: string) {
 }
 
 function reloadActive() {
-	if (activeTab.value === "study") loadStudyVideos();
-	else loadHome();
+	refreshActive();
+}
+
+async function refreshActive() {
+	if (activeTab.value === "study") {
+		await Promise.all([loadStudyVideos(), loadUnreadCount()]);
+	} else if (activeTab.value === "ai") {
+		await Promise.all([loadAiMeta(), loadUnreadCount()]);
+	} else {
+		await Promise.all([loadHome(), loadUnreadCount()]);
+	}
+	if (showMessages.value) {
+		await loadMessages();
+	}
+}
+
+async function runMobileSelfCheck() {
+	selfCheckLoading.value = true;
+	try {
+		await Promise.all([
+			loadHome(),
+			loadStudyMeta(),
+			isLoggedIn.value ? loadAiMeta() : Promise.resolve(),
+			isLoggedIn.value ? loadUnreadCount() : Promise.resolve(),
+		]);
+		lastSelfCheckAt.value = formatCheckTime(new Date());
+		uni.showToast({ title: "检查完成", icon: "none" });
+	} finally {
+		selfCheckLoading.value = false;
+	}
+}
+
+function openSelfCheckTarget(target: SelfCheckTarget) {
+	if (target === "messages") {
+		if (!isLoggedIn.value) {
+			requireLogin();
+			return;
+		}
+		showMessages.value = true;
+		loadMessages();
+		return;
+	}
+	if (target === "ai" && !isLoggedIn.value) {
+		requireLogin();
+		return;
+	}
+	activeTab.value = target === "tools" ? "all" : target;
+	if (target === "study") loadStudyVideos();
+	if (target === "ai") loadAiMeta();
+}
+
+function copySelfCheckReport() {
+	const report = [
+		"数智工具箱移动端联调自检",
+		`接口：${config.baseUrl || "/api"}`,
+		`身份：${isLoggedIn.value ? user.info?.nickName || "已登录" : "未登录"}`,
+		`最近检查：${lastSelfCheckAt.value || "未执行"}`,
+		`数据：工具 ${tools.value.length} / Web 工具 ${mobileWebToolCount()} / 学习 ${studyVideos.value.length} / AI ${aiModels.value.length} / 未读 ${unreadCount.value}`,
+		...selfCheckItems.value.map((item) => `${item.title}：${item.label}｜${item.description}`),
+	].join("\n");
+	uni.setClipboardData({
+		data: report,
+		success() {
+			uni.showToast({ title: "自检报告已复制", icon: "none" });
+		},
+		fail() {
+			uni.showToast({ title: "复制失败，请手动截图", icon: "none" });
+		},
+	});
 }
 
 async function loadHome() {
@@ -595,11 +830,14 @@ async function loadStudyMeta() {
 		})) as StudyCategory[];
 		studyCategories.value = [{ id: 0, name: "全部内容", code: "all" }, ...(data || [])];
 		await loadStudyVideos();
-	} catch {}
+	} catch (err) {
+		studyError.value = friendlyError((err as Error).message);
+	}
 }
 
 async function loadStudyVideos() {
 	studyLoading.value = true;
+	studyError.value = "";
 	try {
 		const category = activeStudyCategory.value === "all" ? "" : activeStudyCategory.value;
 		const data = (await request({
@@ -607,6 +845,8 @@ async function loadStudyVideos() {
 			method: "GET",
 		})) as any;
 		studyVideos.value = data.list || [];
+	} catch (err) {
+		studyError.value = friendlyError((err as Error).message);
 	} finally {
 		studyLoading.value = false;
 	}
@@ -630,6 +870,8 @@ async function openStudy(item: StudyVideo) {
 
 async function loadAiMeta() {
 	if (!isLoggedIn.value) return;
+	aiMetaLoading.value = true;
+	aiMetaError.value = "";
 	try {
 		const [models, tpl] = await Promise.all([
 			request({ url: `${config.baseUrl}/app/ai/models`, method: "GET" }) as Promise<any>,
@@ -643,7 +885,11 @@ async function loadAiMeta() {
 			selectedModelId.value = defaultModel.modelId;
 			thinking.value = Boolean(defaultModel.thinkingDefault);
 		}
-	} catch {}
+	} catch (err) {
+		aiMetaError.value = friendlyError((err as Error).message);
+	} finally {
+		aiMetaLoading.value = false;
+	}
 }
 
 function selectModel(event: any) {
@@ -736,6 +982,7 @@ async function toggleMessages() {
 
 async function loadMessages() {
 	messageLoading.value = true;
+	messageError.value = "";
 	try {
 		const data = (await request({
 			url: `${config.baseUrl}/app/message/list?page=1&size=20`,
@@ -744,7 +991,7 @@ async function loadMessages() {
 		messages.value = data.list || [];
 		await loadUnreadCount();
 	} catch (err) {
-		uni.showToast({ title: (err as Error).message || "消息加载失败", icon: "none" });
+		messageError.value = friendlyError((err as Error).message || "消息加载失败");
 	} finally {
 		messageLoading.value = false;
 	}
@@ -796,6 +1043,8 @@ function logout() {
 	user.clear();
 	favoriteIds.value = new Set();
 	unreadCount.value = 0;
+	aiMetaError.value = "";
+	aiMetaLoading.value = false;
 	aiMessages.value = [];
 }
 
@@ -813,6 +1062,15 @@ function normalizeAsset(url?: string) {
 
 function compareSort(a: { sort?: number; id?: number }, b: { sort?: number; id?: number }) {
 	return Number(b.sort || 0) - Number(a.sort || 0) || Number(b.id || 0) - Number(a.id || 0);
+}
+
+function mobileWebToolCount() {
+	return tools.value.filter((item) => item.type !== "local_plugin" && normalizeToolUrl(item.entry)).length;
+}
+
+function formatCheckTime(date: Date) {
+	const pad = (value: number) => String(value).padStart(2, "0");
+	return `${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
 function friendlyError(message = "") {
@@ -834,12 +1092,14 @@ function isVideo(url: string) {
 <style lang="scss" scoped>
 .toolbox-mobile {
 	min-height: 100vh;
-	padding: 36rpx 28rpx 48rpx;
+	padding: 32rpx 26rpx 72rpx;
 	background:
-		linear-gradient(rgba(25, 99, 164, 0.14) 1px, transparent 1px),
-		linear-gradient(90deg, rgba(25, 99, 164, 0.14) 1px, transparent 1px),
-		#061529;
-	background-size: 56rpx 56rpx;
+		linear-gradient(rgba(25, 99, 164, 0.11) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(25, 99, 164, 0.1) 1px, transparent 1px),
+		linear-gradient(150deg, rgba(34, 199, 255, 0.18), transparent 38%),
+		linear-gradient(28deg, transparent 55%, rgba(255, 194, 87, 0.12)),
+		#07131f;
+	background-size: 58rpx 58rpx, 58rpx 58rpx, 100% 100%, 100% 100%;
 	color: #eff8ff;
 	box-sizing: border-box;
 }
@@ -847,18 +1107,23 @@ function isVideo(url: string) {
 .hero,
 .banner,
 .panel {
-	border: 1px solid rgba(43, 176, 255, 0.42);
-	border-radius: 20rpx;
-	background: linear-gradient(135deg, rgba(7, 39, 80, 0.96), rgba(11, 71, 121, 0.62));
-	box-shadow: 0 24rpx 60rpx rgba(0, 125, 255, 0.12);
+	border: 1px solid rgba(118, 191, 220, 0.34);
+	border-radius: 18rpx;
+	background: linear-gradient(135deg, rgba(8, 32, 55, 0.96), rgba(11, 58, 75, 0.76));
+	box-shadow: 0 20rpx 56rpx rgba(0, 0, 0, 0.22);
 }
 
 .hero {
-	min-height: 220rpx;
+	min-height: 210rpx;
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
-	padding: 32rpx;
+	gap: 24rpx;
+	padding: 34rpx 30rpx;
+	border-color: rgba(83, 224, 213, 0.42);
+	background:
+		linear-gradient(135deg, rgba(8, 33, 60, 0.98), rgba(16, 78, 88, 0.8)),
+		linear-gradient(90deg, rgba(255, 203, 107, 0.14), transparent);
 }
 
 .eyebrow,
@@ -867,7 +1132,7 @@ function isVideo(url: string) {
 .study-card text:nth-child(3),
 .template-card text:nth-child(3) {
 	display: block;
-	color: #8cb2d8;
+	color: #a4bfd3;
 	font-size: 24rpx;
 	line-height: 1.55;
 }
@@ -875,21 +1140,26 @@ function isVideo(url: string) {
 .title {
 	display: block;
 	margin: 12rpx 0;
-	color: #3fe9ff;
+	color: #f5fbff;
 	font-size: 52rpx;
-	font-weight: 800;
+	font-weight: 900;
+	line-height: 1.08;
 }
 
 .hero-actions {
+	min-width: 138rpx;
 	display: flex;
 	flex-direction: column;
 	gap: 14rpx;
 }
 
 button {
+	min-height: 64rpx;
 	color: #dff8ff;
-	background: rgba(8, 54, 103, 0.72);
-	border: 1px solid rgba(64, 223, 255, 0.46);
+	background: rgba(9, 45, 67, 0.82);
+	border: 1px solid rgba(93, 227, 215, 0.42);
+	border-radius: 14rpx;
+	line-height: 1.35;
 }
 
 .dot {
@@ -900,7 +1170,7 @@ button {
 	right: -10rpx;
 	padding: 0 8rpx;
 	border-radius: 999rpx;
-	background: #16d26d;
+	background: #22c55e;
 	color: #fff;
 	font-size: 20rpx;
 	line-height: 28rpx;
@@ -913,13 +1183,20 @@ button {
 	gap: 16rpx;
 	margin: 28rpx 0 22rpx;
 	padding: 0 26rpx;
-	border: 1px solid rgba(43, 176, 255, 0.45);
-	border-radius: 18rpx;
-	background: rgba(4, 22, 48, 0.82);
+	border: 1px solid rgba(104, 193, 218, 0.34);
+	border-radius: 16rpx;
+	background: rgba(7, 25, 41, 0.9);
+	box-shadow: inset 0 1rpx 0 rgba(255, 255, 255, 0.04);
+}
+
+.search text {
+	color: #57dfcf;
+	font-size: 34rpx;
 }
 
 .search input,
 .login-panel input {
+	min-width: 0;
 	flex: 1;
 	color: #eef8ff;
 	font-size: 28rpx;
@@ -939,30 +1216,33 @@ button {
 .select-chip {
 	display: inline-flex;
 	align-items: center;
+	justify-content: center;
 	gap: 10rpx;
 	min-height: 66rpx;
 	margin-right: 16rpx;
 	padding: 0 22rpx;
-	border: 1px solid rgba(43, 176, 255, 0.34);
+	border: 1px solid rgba(112, 170, 194, 0.3);
 	border-radius: 16rpx;
-	color: #a9bfde;
-	background: rgba(4, 22, 48, 0.7);
+	color: #b8c9d8;
+	background: rgba(7, 25, 41, 0.78);
+	font-size: 25rpx;
 }
 
 .tab.active,
 .mode-chip.active,
 .sort-row .active {
-	color: #eefdff;
-	border-color: #22c7ff;
-	background: rgba(20, 105, 176, 0.78);
-	box-shadow: inset 4rpx 0 0 #22e8ff;
+	color: #f8fffd;
+	border-color: rgba(88, 236, 216, 0.78);
+	background: linear-gradient(135deg, rgba(18, 111, 124, 0.92), rgba(17, 78, 99, 0.88));
+	box-shadow: inset 4rpx 0 0 #ffc857;
 }
 
 .tab em {
 	min-width: 30rpx;
+	padding: 0 8rpx;
 	border-radius: 999rpx;
-	background: rgba(24, 205, 188, 0.24);
-	color: #5effe8;
+	background: rgba(255, 200, 87, 0.18);
+	color: #ffe1a1;
 	text-align: center;
 	font-style: normal;
 	font-size: 22rpx;
@@ -970,7 +1250,7 @@ button {
 
 .panel {
 	margin: 20rpx 0;
-	padding: 24rpx;
+	padding: 26rpx;
 }
 
 .panel-head,
@@ -980,7 +1260,8 @@ button {
 	align-items: center;
 	justify-content: space-between;
 	margin-bottom: 18rpx;
-	font-size: 34rpx;
+	color: #f4fbff;
+	font-size: 32rpx;
 	font-weight: 800;
 }
 
@@ -992,19 +1273,20 @@ button {
 .login-panel input {
 	height: 82rpx;
 	padding: 0 20rpx;
-	border: 1px solid rgba(43, 176, 255, 0.35);
+	border: 1px solid rgba(104, 193, 218, 0.34);
 	border-radius: 16rpx;
-	background: rgba(4, 22, 48, 0.82);
+	background: rgba(5, 22, 36, 0.88);
 }
 
 .primary-btn {
 	height: 82rpx;
 	border-radius: 16rpx;
-	background: rgba(20, 105, 176, 0.88);
+	background: linear-gradient(135deg, #18a894, #17729b);
+	font-weight: 800;
 }
 
 .primary-btn.ghost {
-	background: rgba(4, 22, 48, 0.82);
+	background: rgba(6, 28, 44, 0.88);
 }
 
 .error-text,
@@ -1012,18 +1294,30 @@ button {
 	color: #ffd2d2;
 }
 
+.ai-error {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16rpx;
+	padding: 18rpx 20rpx;
+	border: 1px solid rgba(255, 139, 139, 0.34);
+	border-radius: 16rpx;
+	background: rgba(86, 23, 34, 0.28);
+}
+
 .message-item {
 	display: flex;
 	justify-content: space-between;
 	gap: 16rpx;
 	padding: 18rpx 0;
-	border-top: 1px solid rgba(43, 176, 255, 0.18);
-	color: #9eb4d1;
+	border-top: 1px solid rgba(118, 191, 220, 0.16);
+	color: #9fb4c5;
 	font-size: 24rpx;
 }
 
 .message-item text:first-child {
 	flex: 1;
+	min-width: 0;
 	color: #dbefff;
 }
 
@@ -1034,7 +1328,7 @@ button {
 	height: 12rpx;
 	margin-right: 10rpx;
 	border-radius: 50%;
-	background: #16d26d;
+	background: #22c55e;
 }
 
 .banner {
@@ -1045,10 +1339,11 @@ button {
 	justify-content: center;
 	padding: 30rpx;
 	margin-bottom: 24rpx;
+	border-color: rgba(255, 200, 87, 0.28);
 }
 
 .banner text:first-child {
-	color: #3fe9ff;
+	color: #ffdc8a;
 	font-size: 38rpx;
 	font-weight: 900;
 }
@@ -1057,50 +1352,107 @@ button {
 .study-list,
 .message-list {
 	display: grid;
-	gap: 18rpx;
+	gap: 16rpx;
+}
+
+.loading-grid {
+	display: grid;
+	gap: 16rpx;
+	margin: 18rpx 0;
+}
+
+.loading-list {
+	display: grid;
+	gap: 14rpx;
+	padding: 4rpx 0 12rpx;
+}
+
+.loading-card,
+.loading-row {
+	position: relative;
+	overflow: hidden;
+	border: 1px solid rgba(103, 173, 199, 0.18);
+	border-radius: 18rpx;
+	background: rgba(8, 29, 45, 0.72);
+}
+
+.loading-card {
+	height: 134rpx;
+}
+
+.loading-card.tall {
+	height: 360rpx;
+}
+
+.loading-row {
+	height: 64rpx;
+	border-radius: 14rpx;
+}
+
+.loading-card::after,
+.loading-row::after {
+	content: "";
+	position: absolute;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	background: linear-gradient(90deg, transparent, rgba(88, 236, 216, 0.12), transparent);
+	transform: translateX(-100%);
+	animation: loading-sweep 1.35s ease-in-out infinite;
+}
+
+@keyframes loading-sweep {
+	100% {
+		transform: translateX(100%);
+	}
 }
 
 .tool-card,
 .study-card,
 .template-card,
 .ai-message {
-	border: 1px solid rgba(43, 176, 255, 0.38);
+	border: 1px solid rgba(103, 173, 199, 0.3);
 	border-radius: 18rpx;
-	background: rgba(7, 36, 72, 0.78);
+	background: rgba(8, 29, 45, 0.88);
+	box-shadow: 0 12rpx 32rpx rgba(0, 0, 0, 0.18);
 }
 
 .tool-card {
 	display: grid;
-	grid-template-columns: 96rpx minmax(0, 1fr);
-	gap: 22rpx;
-	padding: 24rpx;
+	grid-template-columns: 88rpx minmax(0, 1fr);
+	gap: 20rpx;
+	padding: 22rpx;
 }
 
 .icon {
-	width: 96rpx;
-	height: 96rpx;
+	width: 88rpx;
+	height: 88rpx;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	border: 1px solid rgba(64, 223, 255, 0.62);
-	border-radius: 18rpx;
-	color: #66efff;
-	font-size: 30rpx;
-	font-weight: 800;
-	background: rgba(11, 80, 132, 0.58);
+	border: 1px solid rgba(88, 236, 216, 0.54);
+	border-radius: 16rpx;
+	color: #dffaf5;
+	font-size: 28rpx;
+	font-weight: 900;
+	background: linear-gradient(135deg, rgba(20, 122, 133, 0.72), rgba(28, 58, 88, 0.76));
 }
 
 .name-row {
 	display: flex;
 	align-items: center;
 	gap: 10rpx;
+	min-width: 0;
 }
 
 .name {
 	flex: 1;
+	min-width: 0;
 	color: #f2fbff;
 	font-size: 30rpx;
 	font-weight: 800;
+	line-height: 1.25;
 }
 
 .badge,
@@ -1110,24 +1462,26 @@ button {
 	display: inline-flex;
 	margin: 8rpx 8rpx 0 0;
 	padding: 4rpx 12rpx;
-	border: 1px solid rgba(38, 224, 199, 0.45);
+	border: 1px solid rgba(88, 236, 216, 0.42);
 	border-radius: 8rpx;
-	color: #61ffe7;
+	color: #79f3df;
 	font-size: 22rpx;
 }
 
 .badge.muted {
-	color: #ffd978;
-	border-color: rgba(255, 217, 120, 0.45);
+	color: #ffd98b;
+	border-color: rgba(255, 217, 120, 0.42);
 }
 
 .favorite {
-	color: #667794;
+	min-width: 48rpx;
+	text-align: center;
+	color: #6f8292;
 	font-size: 34rpx;
 }
 
 .favorite.active {
-	color: #ffd761;
+	color: #ffc857;
 }
 
 .empty,
@@ -1139,9 +1493,157 @@ button {
 	background: rgba(80, 20, 36, 0.28);
 }
 
+.empty-state {
+	display: grid;
+	gap: 12rpx;
+	margin: 18rpx 0;
+	padding: 28rpx;
+	border: 1px solid rgba(118, 191, 220, 0.24);
+	border-radius: 18rpx;
+	background: rgba(7, 25, 41, 0.72);
+	color: #9fb4c5;
+}
+
+.empty-state text:first-child {
+	color: #f2fbff;
+	font-size: 30rpx;
+	font-weight: 800;
+}
+
+.empty-state text:nth-child(2) {
+	font-size: 25rpx;
+	line-height: 1.55;
+}
+
+.empty-state button {
+	justify-self: start;
+	min-width: 150rpx;
+	margin: 8rpx 0 0;
+	padding: 0 24rpx;
+	border-color: rgba(88, 236, 216, 0.48);
+	color: #e8fffb;
+	background: rgba(18, 111, 124, 0.62);
+}
+
+.empty-state.compact {
+	margin: 12rpx 0 0;
+	padding: 22rpx;
+}
+
+.empty-state.warning {
+	border-color: rgba(255, 200, 87, 0.34);
+	background: rgba(66, 50, 28, 0.34);
+}
+
+.self-check-head {
+	margin-top: 30rpx;
+}
+
+.self-check-actions {
+	display: flex;
+	align-items: center;
+	gap: 12rpx;
+}
+
+.check-summary {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 12rpx;
+	margin-bottom: 16rpx;
+}
+
+.check-summary > view {
+	min-height: 86rpx;
+	display: grid;
+	align-content: center;
+	gap: 4rpx;
+	padding: 14rpx 16rpx;
+	border: 1px solid rgba(103, 173, 199, 0.2);
+	border-radius: 16rpx;
+	background: rgba(7, 25, 41, 0.62);
+}
+
+.check-summary text:first-child {
+	color: #9fb4c5;
+	font-size: 22rpx;
+}
+
+.check-summary text:last-child {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: #f2fbff;
+	font-size: 25rpx;
+	font-weight: 800;
+}
+
+.check-list {
+	display: grid;
+	gap: 14rpx;
+}
+
+.check-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 18rpx;
+	min-height: 112rpx;
+	padding: 20rpx;
+	border: 1px solid rgba(103, 173, 199, 0.24);
+	border-radius: 16rpx;
+	background: rgba(8, 29, 45, 0.78);
+}
+
+.check-item:active {
+	border-color: rgba(88, 236, 216, 0.52);
+	background: rgba(12, 45, 62, 0.88);
+}
+
+.check-item > view {
+	display: grid;
+	gap: 6rpx;
+	min-width: 0;
+}
+
+.check-item > view text:first-child {
+	color: #f2fbff;
+	font-size: 28rpx;
+	font-weight: 800;
+}
+
+.check-item > view text:last-child {
+	color: #9fb4c5;
+	font-size: 23rpx;
+	line-height: 1.45;
+}
+
+.check-status {
+	flex-shrink: 0;
+	min-width: 100rpx;
+	padding: 8rpx 12rpx;
+	border-radius: 999rpx;
+	text-align: center;
+	font-size: 22rpx;
+}
+
+.check-item.ok .check-status {
+	color: #b9fff2;
+	background: rgba(24, 168, 148, 0.24);
+}
+
+.check-item.warn .check-status {
+	color: #ffe0a3;
+	background: rgba(255, 200, 87, 0.2);
+}
+
+.check-item.todo .check-status {
+	color: #c2d2df;
+	background: rgba(159, 180, 197, 0.14);
+}
+
 .empty.small {
-	color: #8ca8c8;
-	border-color: rgba(43, 176, 255, 0.2);
+	color: #9fb4c5;
+	border-color: rgba(118, 191, 220, 0.18);
 	background: transparent;
 }
 
@@ -1151,11 +1653,11 @@ button {
 
 .cover {
 	height: 260rpx;
-	background: rgba(4, 22, 48, 0.82);
+	background: linear-gradient(135deg, rgba(8, 42, 58, 0.9), rgba(44, 46, 36, 0.72));
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	color: #3fe9ff;
+	color: #ffdc8a;
 	font-size: 54rpx;
 }
 
@@ -1174,20 +1676,22 @@ button {
 	color: #f2fbff;
 	font-size: 30rpx;
 	font-weight: 800;
+	line-height: 1.32;
 }
 
 .ai-head {
 	display: grid;
 	gap: 18rpx;
-	padding: 8rpx 0 24rpx;
+	padding: 10rpx 0 24rpx;
 }
 
 .ai-title {
 	display: block;
 	margin-top: 8rpx;
 	color: #f2fbff;
-	font-size: 42rpx;
+	font-size: 40rpx;
 	font-weight: 900;
+	line-height: 1.18;
 }
 
 .ai-controls {
@@ -1201,7 +1705,8 @@ button {
 	display: flex;
 	align-items: center;
 	gap: 6rpx;
-	color: #b9cee8;
+	color: #bfd2df;
+	font-size: 24rpx;
 }
 
 .template-scroll {
@@ -1212,17 +1717,19 @@ button {
 .template-card {
 	display: inline-grid;
 	gap: 8rpx;
-	width: 420rpx;
+	width: 430rpx;
 	min-height: 160rpx;
 	margin-right: 18rpx;
 	padding: 22rpx;
 	box-sizing: border-box;
+	vertical-align: top;
 }
 
 .template-card text:nth-child(2) {
 	color: #f2fbff;
 	font-size: 30rpx;
 	font-weight: 800;
+	line-height: 1.3;
 }
 
 .ai-message {
@@ -1232,18 +1739,20 @@ button {
 }
 
 .ai-message.user {
-	margin-left: 80rpx;
-	background: rgba(255, 255, 255, 0.08);
+	margin-left: 72rpx;
+	border-color: rgba(255, 200, 87, 0.32);
+	background: rgba(66, 58, 37, 0.52);
 }
 
 .ai-message.assistant {
 	margin-right: 40rpx;
+	border-color: rgba(88, 236, 216, 0.28);
 }
 
 .reasoning {
 	display: block;
 	margin-bottom: 12rpx;
-	color: #80cbe3;
+	color: #85d9cf;
 }
 
 .output-list {
@@ -1260,12 +1769,13 @@ button {
 
 .composer {
 	position: sticky;
-	bottom: 18rpx;
+	bottom: 20rpx;
 	margin-top: 26rpx;
 	padding: 20rpx;
-	border: 1px solid rgba(88, 110, 132, 0.55);
+	border: 1px solid rgba(167, 190, 198, 0.34);
 	border-radius: 24rpx;
-	background: rgba(22, 26, 34, 0.96);
+	background: rgba(13, 20, 28, 0.96);
+	box-shadow: 0 -12rpx 42rpx rgba(0, 0, 0, 0.28);
 }
 
 .composer textarea {
@@ -1273,6 +1783,7 @@ button {
 	min-height: 92rpx;
 	color: #eef8ff;
 	line-height: 1.6;
+	font-size: 28rpx;
 }
 
 .mode-row {
@@ -1284,8 +1795,9 @@ button {
 	width: 100%;
 	height: 78rpx;
 	border-radius: 999rpx;
-	background: #dbe8f9;
-	color: #08172b;
+	border: 0;
+	background: linear-gradient(135deg, #f8d982, #56e0d0);
+	color: #07131f;
 	font-weight: 800;
 }
 </style>

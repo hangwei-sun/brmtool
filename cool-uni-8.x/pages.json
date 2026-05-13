@@ -61,7 +61,8 @@
 				{
 					"path": "home",
 					"style": {
-						"navigationStyle": "custom"
+						"navigationStyle": "custom",
+						"enablePullDownRefresh": true
 					}
 				},
 				{
