@@ -74,7 +74,6 @@ export class AppToolboxController extends BaseController {
     );
   }
 
-  @CoolTag(TagTypes.IGNORE_TOKEN)
   @Post('/favorite', { summary: '收藏或取消收藏工具' })
   async favorite(@Body('toolId') toolId: number) {
     return this.ok(

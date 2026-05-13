@@ -87,6 +87,7 @@ const useUserStore = defineStore("user", function () {
 		get,
 		set,
 		update,
+		clear,
 		logout,
 	};
 });

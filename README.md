@@ -8,6 +8,7 @@
 
 - 后台管理：工具分类、工具管理、使用统计、消息通知、留言板、学习分类、学习入库、插件市场、AI 模型与模板管理。
 - 桌面端：科技风工具箱首页、分类/标签筛选、搜索、收藏、内嵌 WebView、内置工具、本地插件、消息通知、个人中心、在线更新。
+- PC Web：公开用户侧工具站 `/web`，提供工具浏览、学习中心、消息、登录、收藏和 AI 工作台。
 - AI 工作台：DeepSeek 文本对话、流式输出、会话历史、模板创作、火山引擎图片/音频/视频生成接口代理。
 - 插件体系：后台自建插件市场、插件包上传/解包/checksum 校验、Web 沙箱运行、插件更新检查。
 - 学习中心：后台维护学习分类和视频内容，桌面端按分类、推荐、热门展示学习内容。
@@ -187,6 +188,7 @@ pnpm exec tsc --noEmit
 
 ```text
 https://tool.baotounews.cn/                  # 管理端静态资源
+https://tool.baotounews.cn/web               # PC Web 公开工具站
 https://tool.baotounews.cn/download          # 桌面端软件下载页
 https://tool.baotounews.cn/api               # 后端接口反代
 https://tool.baotounews.cn/upload            # 上传文件访问
@@ -221,5 +223,5 @@ https://tool.baotounews.cn/updates/desktop   # 桌面端更新包
 ## 当前阶段
 
 - MVP 核心能力已完成。
-- 当前主线：P13 内测上线交付、P15-P18 插件/移动端能力收敛、P19 AI 工作台与多模型生成体验收口。
+- 当前主线：P13 内测上线交付、P15-P18 插件/移动端能力收敛、P19 AI 工作台与多模型生成体验收口、P20 PC Web 与移动端一致性收口。
 - 下一步重点：宝塔生产部署验证、Windows unsigned 安装包、在线更新实测、学习入库显示问题回归验证、AI 生成模型后台配置完善。

@@ -3,7 +3,7 @@ import { type ModuleConfig } from '/@/cool';
 export default (): ModuleConfig => {
 	return {
 		ignore: {
-			token: ['/download']
+			token: ['/download', '/web']
 		},
 		views: [
 			{
@@ -57,6 +57,14 @@ export default (): ModuleConfig => {
 			}
 		],
 		pages: [
+			{
+				path: '/web',
+				meta: {
+					label: '数智工具箱 Web',
+					process: false
+				},
+				component: () => import('./pages/web.vue')
+			},
 			{
 				path: '/download',
 				meta: {

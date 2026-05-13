@@ -23,6 +23,7 @@
 | P13 上线交付 | 进行中 | 生产部署、Windows/CI 打包、更新链路验证 |
 | P15-P18 插件与移动端 | 进行中 | 插件市场、Web 沙箱、插件更新、H5/PWA |
 | P19 AI 工作台与多模型生成 | 进行中 | AI Workspace、DeepSeek 文本对话、火山引擎生图/音频/视频、模型配置、模板管理 |
+| P20 PC Web 与移动端一致性 | 进行中 | `/web` 公开工具站、移动端 H5/小程序兼容、工具/学习/消息/AI 同步 |
 
 ## 2. 项目结构与技术栈
 
@@ -90,6 +91,7 @@ node start-dev.js
 # 后端接口由 Nginx 反代到 https://tool.baotounews.cn/api
 # 桌面端更新包上传到 https://tool.baotounews.cn/updates/desktop
 # 软件下载页公开访问 https://tool.baotounews.cn/download
+# PC Web 公开工具站 https://tool.baotounews.cn/web
 ```
 
 ## 5. 开发硬约束
@@ -300,6 +302,15 @@ node start-dev.js
 - [ ] 回归验证火山引擎模型 ID、默认尺寸、请求超时和任务查询状态；后台模型配置必须以实际开通 endpoint 为准。
 - [ ] 文件上传参考、`/` 技能、`@` 主体先保留 UI 语义，暂不做文件解析和知识库检索。
 
+### P20 PC Web 与移动端一致性
+- 目标：补齐用户侧 PC Web 与移动端体验，使其与 Electron 桌面端保持同一套工具箱信息架构。
+- [x] 管理端新增公开 page 路由 `/web`，不进入后台主布局，提供 PC Web 工具站。
+- [x] PC Web 已覆盖首页、工具/导航筛选、收藏、登录、消息、学习中心、AI 工作台和内嵌网页运行区。
+- [x] 移动端 `pages/toolbox/home` 已升级为多工作区入口，覆盖工具、学习、AI、消息和我的。
+- [x] 移动端外链打开做 H5/小程序差异处理：H5 进入 web-view，小程序复制链接并提示。
+- [x] PC Web 文本 AI 使用流式接口，移动端使用兼容 H5/小程序的普通请求；图片、音频、视频生成均走 `/app/ai/generate`。
+- [ ] 需要在真实浏览器、小程序开发者工具和生产域名下做视觉与接口联调。
+
 ### P13 验证计划
 - 配置检查：搜索确认生产代码不再残留 `show.cool-admin.com`、`https://example.com/auto-updates`、生产数据库示例密码和真实密钥。
 - 后端：`pnpm lint`、`pnpm build`；使用生产环境变量启动一次，验证 `/api/app/toolbox/home`、`/api/admin/base/open/eps` 经 Nginx 可达。
@@ -314,12 +325,12 @@ node start-dev.js
 - 桌面端：`pnpm typecheck`、`pnpm build` 通过；`out/preload/plugin.js` 和主 preload 均已生成。
 - 移动端：`pnpm exec tsc --noEmit` 通过；`pnpm exec vite build` 仍需补齐 UniApp/HBuilderX 构建环境。
 - 发布检查：`node scripts/check-release-config.mjs` 通过；提示 `UPDATE_DIR` 未设置，因此本地未检查更新包元数据。
-- 文档：`README.md` 已更新为当前产品总览，`tool.md` 已补充宝塔部署全流程。
+- 文档：`README.md` 已更新为当前产品总览，`tool.md` 已补充宝塔部署全流程，`/web` 公开工具站与移动端一致性已记录。
 - 通用：`git diff --check` 通过。
 
 ### 当前交接状态
 - 当前仓库主线已同步到 `origin/main`；后续提交前仍需检查是否混入构建产物、真实 `.env` 或密钥。
-- 下一步 P13：在宝塔创建站点和反代，配置生产 `.env.production`，部署管理端静态资源，验证 `/api/app/toolbox/home`、`/api/admin/base/open/eps`、`/download`、`/upload`、`/plugins`。
+- 下一步 P13：在宝塔创建站点和反代，配置生产 `.env.production`，部署管理端静态资源，验证 `/api/app/toolbox/home`、`/api/admin/base/open/eps`、`/web`、`/download`、`/upload`、`/plugins`。
 - 桌面端发布：使用 GitHub Actions 或 Windows 机器补跑 Windows unsigned 包，macOS 本机产出内测包后上传 `latest*.yml`、安装包和 blockmap 到 `/updates/desktop`。
 - 近期问题优先级：先回归学习入库后台列表和桌面端学习卡片显示，再回归 AI 生成模型的后台配置、超时和错误提示。
 - 插件与 H5 后续：插件本地解包运行、失败回滚、安装失败原因展示、PWA service worker 离线缓存仍是未完成项。
