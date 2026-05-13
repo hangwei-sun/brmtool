@@ -317,6 +317,9 @@ node start-dev.js
 - [x] 移动端联调自检补充环境摘要：展示接口地址、登录态、核心数据数量和最近检查时间。
 - [x] 移动端联调自检支持复制诊断报告，便于 H5/小程序现场问题回传。
 - [x] 移动端工具、学习和 AI 元数据支持最近一次只读缓存兜底，弱网失败时展示缓存提示并写入诊断报告。
+- [x] PC Web 与桌面端收藏同步收口：Web 登录态工具首页/列表带 token 拉取云端收藏，收藏写入支持目标状态设置，登录后匿名收藏补偿同步到云端。
+- [x] PC Web 智能工作台补齐桌面端账号数据同步：登录态初始化拉取会话列表，未登录显示同步引导，模型/模板/会话继续复用 `/app/ai/**`。
+- [x] PC Web 智能工作台样式向桌面端收口：左侧历史、主工作区、空状态和输入区统一为深色工作台布局。
 - [x] 新增 `docs/qa/mobile-p20-checklist.md`，固化 H5 浏览器、小程序开发者工具和生产域名联调清单。
 - [ ] 需要在真实浏览器、小程序开发者工具和生产域名下做视觉与接口联调。
 
@@ -341,6 +344,7 @@ node start-dev.js
 - P20 移动端联调自检摘要：`git diff --check`、`cool-uni-8.x pnpm exec tsc --noEmit` 通过；自检面板可显示接口、身份、数据量和最近检查时间。
 - P20 移动端联调报告复制：已用 `ctx7` 查询 UniApp 剪贴板 API，`git diff --check`、`cool-uni-8.x pnpm exec tsc --noEmit` 通过；复制内容不包含 token、key 或密码。
 - P20 移动端弱网缓存兜底：已用 `ctx7` 查询 UniApp Storage API，工具、学习、AI 元数据成功加载后写入本地缓存；接口失败时只读展示最近缓存，并在自检报告中记录缓存状态和失败摘要，不缓存 token、AI 对话正文或用户隐私数据；`git diff --check`、`cool-uni-8.x pnpm exec tsc --noEmit` 通过，`pnpm exec vite build --mode h5` 仍失败于缺少既有构建器依赖 `@dcloudio/vite-plugin-uni`。
+- P20 PC Web/桌面端收藏与智能同步：`git diff --check`、`cool-service-master/api pnpm build`、`cool-service-master/vue pnpm type-check`、`cool-electron pnpm typecheck` 通过；Web 登录态会带 token 拉取收藏和 AI 会话，收藏接口支持目标状态写入，桌面端与 Web 端收藏状态不再依赖各自本地翻转；`cool-service-master/vue pnpm dev --host 127.0.0.1` 启动后 `curl -I http://127.0.0.1:9000/web` 返回 200，本地 API 未启动导致 EPS 提示失败但不影响 `/web` 页面入口验证。
 - P20 移动端联调清单：已用 `ctx7` 查询 UniApp 多平台构建文档，新增 `docs/qa/mobile-p20-checklist.md`，记录 H5、小程序和生产域名验证项；仅为待执行清单，不虚假勾选真实联调。
 - 发布检查：`node scripts/check-release-config.mjs` 通过；提示 `UPDATE_DIR` 未设置，因此本地未检查更新包元数据。
 - 文档：`README.md` 已更新为当前产品总览，`tool.md` 已补充宝塔部署全流程，`/web` 公开工具站与移动端一致性已记录。

@@ -75,11 +75,15 @@ export class AppToolboxController extends BaseController {
   }
 
   @Post('/favorite', { summary: '收藏或取消收藏工具' })
-  async favorite(@Body('toolId') toolId: number) {
+  async favorite(
+    @Body('toolId') toolId: number,
+    @Body('favorited') favorited?: boolean
+  ) {
     return this.ok(
       await this.toolboxAppService.toggleFavorite(
         this.currentUserId(),
-        Number(toolId)
+        Number(toolId),
+        favorited
       )
     );
   }

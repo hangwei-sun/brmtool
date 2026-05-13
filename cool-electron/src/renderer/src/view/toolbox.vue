@@ -475,8 +475,12 @@ async function toggleFavorite(id: number) {
   }
 
   try {
-    await toggleFavoriteRemote(id)
-    syncStatus.value = next.has(id) ? '收藏已同步' : '已取消收藏'
+    const data = await toggleFavoriteRemote(id, next.has(id))
+    const synced = new Set(favoriteIds.value)
+    data.favorited ? synced.add(id) : synced.delete(id)
+    favoriteIds.value = synced
+    writeFavoriteIds(synced)
+    syncStatus.value = data.favorited ? '收藏已同步' : '已取消收藏'
   } catch {
     syncStatus.value = '收藏已保存在本地'
   }

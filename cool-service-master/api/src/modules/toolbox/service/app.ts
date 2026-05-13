@@ -125,13 +125,24 @@ export class ToolboxAppService {
     return { ...tool, isFavorite: !!favorite };
   }
 
-  async toggleFavorite(userId: number, toolId: number) {
+  async toggleFavorite(userId: number, toolId: number, favorited?: boolean) {
     if (!this.hasUser(userId)) {
       throw new CoolCommException('请先登录');
     }
     await this.checkEnabledTool(toolId, userId);
 
     const exists = await this.favoriteRepo.findOneBy({ userId, toolId });
+    if (favorited !== undefined && favorited !== null) {
+      const target = this.normalizeBoolean(favorited);
+      if (target && !exists) {
+        await this.favoriteRepo.save({ userId, toolId });
+      }
+      if (!target && exists) {
+        await this.favoriteRepo.delete({ userId, toolId });
+      }
+      return { favorited: target };
+    }
+
     if (exists) {
       await this.favoriteRepo.delete({ userId, toolId });
       return { favorited: false };
@@ -201,7 +212,6 @@ export class ToolboxAppService {
       .map(e => toolMap.get(e.toolId))
       .filter(Boolean) as ToolboxToolEntity[];
     return this.sortToolsByBackendOrder(favoriteTools)
-      .slice(0, 12)
       .map(e => ({
         ...e,
         isFavorite: true,
@@ -303,6 +313,10 @@ export class ToolboxAppService {
 
   private hasUser(userId?: number) {
     return typeof userId === 'number' && Number.isInteger(userId) && userId > 0;
+  }
+
+  private normalizeBoolean(value: unknown) {
+    return value === true || value === 'true' || value === 1 || value === '1';
   }
 
   private clampPositiveInteger(

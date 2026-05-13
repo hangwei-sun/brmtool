@@ -391,8 +391,11 @@ export async function fetchStudyVideoRecommend(id: number, limit = 6) {
   return (data || []).map(normalizeStudyVideo)
 }
 
-export async function toggleFavoriteRemote(toolId: number) {
-  return await toolboxRequest<{ favorited: boolean }>('/app/toolbox/favorite', 'POST', { toolId })
+export async function toggleFavoriteRemote(toolId: number, favorited?: boolean) {
+  return await toolboxRequest<{ favorited: boolean }>('/app/toolbox/favorite', 'POST', {
+    toolId,
+    ...(typeof favorited === 'boolean' ? { favorited } : {})
+  })
 }
 
 export async function recordUsageRemote(toolId: number) {

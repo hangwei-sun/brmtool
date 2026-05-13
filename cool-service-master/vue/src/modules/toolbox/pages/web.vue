@@ -122,7 +122,14 @@
 								</div>
 							</div>
 
-							<div class="message-list" ref="messageListRef">
+							<div v-if="!currentUser" class="ai-empty">
+								<span>AGENT WORKSPACE</span>
+								<strong>登录后同步桌面端智能会话</strong>
+								<p>模型、模板、历史会话和图片/音频/视频生成记录会与桌面端共用同一套账号数据。</p>
+								<button type="button" @click="showLogin = true">登录同步</button>
+							</div>
+
+							<div v-else class="message-list" ref="messageListRef">
 								<div class="template-grid" v-if="!messages.length">
 									<button v-for="item in templates" :key="item.id" type="button" @click="useTemplate(item)">
 										<span>{{ item.tags?.[0] || '精选' }}</span>
@@ -161,7 +168,7 @@
 							</div>
 						</div>
 
-							<div class="composer">
+							<div v-if="currentUser" class="composer">
 								<textarea v-model="aiInput" :placeholder="composerPlaceholder" @keydown.enter.meta.prevent="sendAi" />
 								<div class="mode-actions">
 									<button
@@ -664,7 +671,12 @@ const categorySubtitle = computed(() =>
 watch(aiMode, syncSelectedModelForMode);
 
 onMounted(async () => {
-	await Promise.allSettled([loadHome(), loadStudyMeta(), loadAiMeta()]);
+	await Promise.allSettled([
+		loadHome(),
+		loadStudyMeta(),
+		loadAiMeta(),
+		currentUser.value ? loadConversations() : Promise.resolve()
+	]);
 	if (currentUser.value) {
 		await loadUnreadCount();
 	}
@@ -714,9 +726,10 @@ async function loadHome() {
 	loadingHome.value = true;
 	homeError.value = '';
 	try {
+		const withAuth = Boolean(currentUser.value);
 		const [data, toolsPage] = await Promise.all([
-			apiRequest<any>('/app/toolbox/home', 'GET', undefined, false).catch(() => ({})),
-			apiRequest<{ list: Tool[] }>('/app/toolbox/tools?page=1&size=100', 'GET', undefined, false).catch(() => ({ list: [] }))
+			apiRequest<any>('/app/toolbox/home', 'GET', undefined, withAuth).catch(() => ({})),
+			apiRequest<{ list: Tool[] }>('/app/toolbox/tools?page=1&size=100', 'GET', undefined, withAuth).catch(() => ({ list: [] }))
 		]);
 		categories.value = normalizeCategories(data.categories || []);
 		const map = new Map<string, Tool>();
@@ -731,7 +744,7 @@ async function loadHome() {
 		if (map.size === 0) {
 			homeError.value = '应用接口暂时不可用，请确认后端服务已启动后点击刷新。';
 		}
-		const cachedFavoriteIds = readFavoriteIds();
+		const cachedFavoriteIds = currentUser.value ? new Set<number>() : readFavoriteIds();
 		tools.value = Array.from(map.values())
 			.map(tool => ({
 				...tool,
@@ -822,7 +835,10 @@ async function toggleFavorite(tool: Tool) {
 	}
 
 	try {
-		const data = await apiRequest<{ favorited: boolean }>('/app/toolbox/favorite', 'POST', { toolId: tool.id });
+		const data = await apiRequest<{ favorited: boolean }>('/app/toolbox/favorite', 'POST', {
+			toolId: tool.id,
+			favorited: optimistic.has(tool.id)
+		});
 		const next = new Set(favoriteIds.value);
 		data.favorited ? next.add(tool.id) : next.delete(tool.id);
 		favoriteIds.value = next;
@@ -1077,6 +1093,7 @@ async function login() {
 		writeSession({ ...readSession(), user });
 		favoriteIds.value = mergeFavoriteIds(readFavoriteIds(user), anonymousFavorites);
 		writeFavoriteIds(favoriteIds.value, user);
+		await syncFavoriteIdsToCloud(favoriteIds.value);
 		showLogin.value = false;
 		await Promise.allSettled([loadHome(), loadUnreadCount(), loadAiMeta(), loadConversations()]);
 	} catch (err) {
@@ -1162,6 +1179,18 @@ function writeFavoriteIds(ids: Set<number>, user: UserInfo | null = currentUser.
 
 function mergeFavoriteIds(...sets: Set<number>[]) {
 	return new Set(sets.flatMap(ids => Array.from(ids)));
+}
+
+async function syncFavoriteIdsToCloud(ids: Set<number>) {
+	if (!currentUser.value || ids.size === 0) return;
+	await Promise.allSettled(
+		Array.from(ids).map(toolId =>
+			apiRequest('/app/toolbox/favorite', 'POST', {
+				toolId,
+				favorited: true
+			})
+		)
+	);
 }
 
 function compareSort(a: { sort?: number; id?: number }, b: { sort?: number; id?: number }) {
@@ -2186,16 +2215,21 @@ select:focus-visible {
 	height: 100%;
 	min-height: 0;
 	display: grid;
-	grid-template-columns: 260px minmax(0, 1fr);
-	border: 1px solid rgba(35, 148, 230, 0.32);
-	background: rgba(4, 13, 26, 0.58);
+	grid-template-columns: 282px minmax(0, 1fr);
+	border: 1px solid rgba(74, 137, 199, 0.34);
+	border-radius: 18px;
+	background:
+		linear-gradient(135deg, rgba(12, 30, 52, 0.94), rgba(5, 13, 25, 0.96)),
+		rgba(4, 13, 26, 0.72);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 18px 44px rgba(0, 0, 0, 0.22);
 	overflow: hidden;
 }
 
 .ai-history {
 	min-height: 0;
 	padding: 18px;
-	border-right: 1px solid rgba(35, 148, 230, 0.22);
+	border-right: 1px solid rgba(74, 137, 199, 0.22);
+	background: rgba(4, 13, 26, 0.44);
 	overflow: auto;
 }
 
@@ -2219,7 +2253,8 @@ select:focus-visible {
 
 .ai-history button.active,
 .history-action {
-	background: rgba(255, 255, 255, 0.08);
+	border: 1px solid rgba(58, 218, 255, 0.32);
+	background: rgba(0, 126, 189, 0.2);
 }
 
 .ai-history small {
@@ -2286,6 +2321,46 @@ select:focus-visible {
 	min-height: 0;
 	overflow: auto;
 	padding: 10px 4vw 24px;
+}
+
+.ai-empty {
+	align-self: center;
+	justify-self: center;
+	width: min(520px, 100%);
+	display: grid;
+	gap: 14px;
+	padding: 34px;
+	border: 1px dashed rgba(91, 160, 220, 0.42);
+	border-radius: 18px;
+	background: rgba(5, 20, 38, 0.58);
+	text-align: center;
+	color: #9db1d0;
+}
+
+.ai-empty span {
+	color: #32e9ff;
+	font-size: 12px;
+	letter-spacing: 0.12em;
+}
+
+.ai-empty strong {
+	color: #eef8ff;
+	font-size: 24px;
+}
+
+.ai-empty p {
+	margin: 0;
+	line-height: 1.7;
+}
+
+.ai-empty button {
+	justify-self: center;
+	width: max-content;
+	padding: 10px 18px;
+	border: 1px solid rgba(58, 218, 255, 0.48);
+	border-radius: 999px;
+	background: rgba(0, 134, 206, 0.18);
+	color: #91efff;
 }
 
 .message {
